@@ -1,46 +1,47 @@
 // MoeDownloader.cpp : Defines the entry point for the console application.
 //
+//
+//
+
 #include "stdafx.h"
-//#define DEBUGGING
+//#define DEBUGGING //Uncomment this line to enable special debugging procedures
 using namespace System;
 using namespace System::Net;
 using namespace System::Threading;
 using namespace HtmlAgilityPack;
-value struct ReadYande_reParameters
+value struct ReadYande_reParameters //Defines a Struc with YandereDownloader::ReadYande_re parameters needance
 {
 	int page; 
 	array<String^>^tags;
 };
-ref class YandereDownloader
+ref class YandereDownloader //MainClass yandere downloader
 {
 public:
-	static String^ ReadYande_re(int page, array<String^>^tags)
+	static String^ ReadYande_re(int page, array<String^>^tags) //Function to get RAW html source code from site with 'page' and 'tags' as source
 	{
-		String^ Page_Data;
-		String^ FinalUrl= gcnew String("https://yande.re/post?page=");
-		FinalUrl += page.ToString() + "&tags=";
-		for each (String^ tag in tags)
+		String^ Page_Data;//RAW Html string initialization
+		String^ FinalUrl= gcnew String("https://yande.re/post?page=");//URL String initialization
+		FinalUrl += page.ToString() + "&tags=";//Add page and "&tags=" to URL
+		for each (String^ tag in tags)//Cycle to add each tag to URL
 		{
-			FinalUrl+=tag+"+";
+			FinalUrl+=tag+"+";//each tags must be separated by '+' so each tag is added to URL after '+'
 		}
-		FinalUrl=FinalUrl->Remove(FinalUrl->Length-1);
+		FinalUrl=FinalUrl->Remove(FinalUrl->Length-1);//removes the extra '+' from URL output
 #ifdef DEBUGGING
 		System::Console::WriteLine(FinalUrl);
-		//System::Console::ReadKey();
-		//System::Console::Clear();
 #endif
 		try
 		{
-			WebClient^ Host_Reader = gcnew WebClient;
-			Host_Reader->Headers->Add("user-agent", "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-			Page_Data = Host_Reader->DownloadString(FinalUrl);		
+			WebClient^ Host_Reader = gcnew WebClient; //Initialize the Webclient needed to parse HTML
+			Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING); //Add user agent header
+			Page_Data = Host_Reader->DownloadString(FinalUrl);	//Download Source Code and put it in PageData String
 		}
-		catch (WebException^ e)
+		catch (WebException^ e) //In case of Webexception the following code is run
 		{
 			Console::ForegroundColor=ConsoleColor::Red;
 			Console::BackgroundColor=ConsoleColor::Black;
 #ifdef DEBUGGING
-			Console::WriteLine("Cannot connect to Host {0}", e);
+			Console::WriteLine("Cannot connect to Host {0}", e); //Detailed error code
 #endif
 #ifndef DEBUGGING
 			Console::WriteLine("Cannot connect to Host");
@@ -67,8 +68,8 @@ public:
 				{
 					TempUrl=var->InnerText;
 #ifdef DEBUGGING
-					//Console::WriteLine(TempUrl);
-					//Console::WriteLine();
+					Console::WriteLine(TempUrl);
+					Console::WriteLine();
 #endif
 				}
 				return Convert::ToInt32(TempUrl,10);
@@ -109,7 +110,7 @@ public:
 				catch (System::ArgumentOutOfRangeException^ e)
 				{
 #ifdef DEBUGGING
-					Console::WriteLine("Error ", e);
+					Console::WriteLine("Error {0}", e);
 					Console::WriteLine(FilePath);
 #endif
 
@@ -118,9 +119,12 @@ public:
 				if (!(IO::File::Exists(FilePath)))
 				{
 					WebClient^ Host_Reader = gcnew WebClient;
-					Host_Reader->Headers->Add("user-agent", "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
+					Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING);
 					Console::WriteLine("Downloading "+FilePath);
-					Host_Reader->DownloadFile(Link,FilePath);
+#ifndef DEBUGGING
+					Host_Reader->DownloadFile(Link,FilePath);  
+#endif // !DEBUGGING
+
 				} 
 				else
 				{
@@ -174,6 +178,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			int ThreadGroups = TotalPages/NUMBER_OF_THREADS;
 			int ThreadRemainder = TotalPages % NUMBER_OF_THREADS;
 			int ActualPage = 0;
+			int ActualThread = 0;
 			array<Thread^>^Threads = gcnew array<Thread^>(0);
 			array<YandereDownloader^>^DownloaderReferences = gcnew array<YandereDownloader^>(0);
 			array<ReadYande_reParameters>^Parameters = gcnew array<ReadYande_reParameters>(0);
@@ -181,32 +186,23 @@ int _tmain(int argc, _TCHAR* argv[])
 				for (int th = 0; th < NUMBER_OF_THREADS; th++)
 				{
 					ActualPage=tg*NUMBER_OF_THREADS+th+1;
-					Array::Resize(Threads,ActualPage);
-					Array::Resize(DownloaderReferences,ActualPage);
-					Array::Resize(Parameters,ActualPage);
-					DownloaderReferences[ActualPage-1]=gcnew YandereDownloader;
-					Parameters[ActualPage-1].page=ActualPage;
-					Parameters[ActualPage-1].tags=args;
-					ParameterizedThreadStart^ ThreadDelegate = gcnew ParameterizedThreadStart(DownloaderReferences[ActualPage-1], &YandereDownloader::ParseHtmlTags) ;
-					Threads[ActualPage-1]=gcnew Thread(ThreadDelegate);
-					Threads[ActualPage-1]->Start(Parameters[ActualPage-1]);
+					THREADING_MACRO
 #ifdef DEBUGGING
-					String^ Debug = gcnew String("");
-					Debug="Thread "+ActualPage+" Started";
-					Console::WriteLine(Debug);
-					Thread::Sleep( 0 );
-					Console::WriteLine(ActualPage);
-#endif
-
+					THREADING_MACRO_DEBUGGING
+#endif // DEBUGGING
 				}
+#ifdef DEBUGGING
+				if (ThreadRemainder==0)
+				{
+					Console::WriteLine("All Threads Started");
+				}
+#endif // DEBUGGING
 				for (int tw=0;tw<NUMBER_OF_THREADS;tw++)
 				{
-					
-					Threads[tg*NUMBER_OF_THREADS+tw]->Join();
+					ActualThread=tg*NUMBER_OF_THREADS+tw;
+					THREADING_MACRO_JOINER
 #ifdef DEBUGGING
-					String^ Debug = gcnew String("");
-					Debug="Thread "+tg*NUMBER_OF_THREADS+tw+1+" Terminated";
-					Console::WriteLine(Debug);
+					THREADING_MACRO_JOINER_DEBUGGING
 #endif // DEBUGGING
 				}
 			}
@@ -214,27 +210,26 @@ int _tmain(int argc, _TCHAR* argv[])
 					for (int tr=0;tr<ThreadRemainder;tr++)
 					{
 						ActualPage =ThreadGroups*NUMBER_OF_THREADS+tr+1;
-						Array::Resize(Threads,ActualPage);
-						Array::Resize(DownloaderReferences,ActualPage);
-						Array::Resize(Parameters,ActualPage);
-						DownloaderReferences[ActualPage-1]=gcnew YandereDownloader;
-						Parameters[ActualPage-1].page=ActualPage;
-						Parameters[ActualPage-1].tags=args;
-						ParameterizedThreadStart^ ThreadDelegate = gcnew ParameterizedThreadStart(DownloaderReferences[ActualPage-1], &YandereDownloader::ParseHtmlTags) ;
-						Threads[ActualPage-1]=gcnew Thread(ThreadDelegate);
-						Threads[ActualPage-1]->Start(Parameters[ActualPage-1]);
+						THREADING_MACRO
 #ifdef DEBUGGING
-						String^ Debug = gcnew String("");
-						Debug="Thread "+ActualPage+" Started";
-						Console::WriteLine(Debug);
-						Thread::Sleep( 0 );
-						Console::WriteLine(ActualPage);
-#endif
+						THREADING_MACRO_DEBUGGING
+#endif // DEBUGGING
+					}
+#ifdef DEBUGGING
+					Console::WriteLine("All Threads Started");
+#endif // DEBUGGING
+					for (int trj=0;trj<ThreadRemainder;trj++)
+					{
+						ActualThread=ThreadGroups*NUMBER_OF_THREADS+trj;
+						THREADING_MACRO_JOINER
+#ifdef DEBUGGING
+						THREADING_MACRO_JOINER_DEBUGGING
+#endif // DEBUGGING
 					}
 				}
 
 #ifdef DEBUGGING
-			Console::WriteLine("All Threads Started");
+			Console::WriteLine("All Threads terminated");
 #endif // DEBUGGING
 
 
