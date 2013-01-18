@@ -86,7 +86,7 @@ public:
 		String^ HtmlContent=YandereDownloader::ReadYande_re(Parameteres->page,Parameteres->tags); //Get Raw HTML with needed parameters
 		String^ TempUrl; //Initialize string to store URL
 		HtmlDocument doc; //initialize HTML Documents
-		doc.LoadHtml(texto);//load Html from RAW Html string
+		doc.LoadHtml(HtmlContent);//load Html from RAW Html string
 		HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
 		HtmlNodeCollection^ nodos_a = nodo_p->SelectNodes("//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']"); //Select all nodes with direct image link
 		Console::WriteLine("Downloading "+nodos_a->Count+" files.");
