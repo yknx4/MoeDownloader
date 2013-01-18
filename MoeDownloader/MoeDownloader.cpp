@@ -9,11 +9,6 @@ using namespace System;
 using namespace System::Net;
 using namespace System::Threading;
 using namespace HtmlAgilityPack;
-value struct ReadYande_reParameters //Defines a Struc with YandereDownloader::ReadYande_re parameters needance
-{
-	int page; 
-	array<String^>^tags;
-};
 ref class YandereDownloader //MainClass yandere downloader
 {
 public:
@@ -57,10 +52,7 @@ public:
 		if (!(texto==nullptr)) //If the RAW HTML exist, do following code
 		{
 			String^ PageTemp; // Create string pointer to get inner text from Html Node
-			HtmlDocument doc; //initialize HTML Documents
-			doc.LoadHtml(texto);//load Html from RAW Html string
-			HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
-			HtmlNodeCollection^ nodos_a = nodo_p->SelectNodes("//div[@class='pagination']/a"); //Select 'a' nodes from 'div' with class='pagination'
+			HtmlNodeCollection^ nodos_a = YandereDownloader::GetHtmlNodes(texto,"//div[@class='pagination']/a"); //Select 'a' nodes from 'div' with class='pagination'
 			try //Try to read nodes
 			{
 				nodos_a->RemoveAt(nodos_a->Count-1); //Remove an extra node that doesn't fullfill our needance
@@ -81,14 +73,11 @@ public:
 			return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
 		}
 	}
-	void ParseHtmlTags(Object^ data){//function to Parse Html Tags and call download
+	void DownloadFiles(Object^ data){//function to Parse Html Tags and call download
 		ReadYande_reParameters^ Parameteres =(ReadYande_reParameters^)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
 		String^ HtmlContent=YandereDownloader::ReadYande_re(Parameteres->page,Parameteres->tags); //Get Raw HTML with needed parameters
 		String^ TempUrl; //Initialize string to store URL
-		HtmlDocument doc; //initialize HTML Documents
-		doc.LoadHtml(HtmlContent);//load Html from RAW Html string
-		HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
-		HtmlNodeCollection^ nodos_a = nodo_p->SelectNodes("//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']"); //Select all nodes with direct image link
+		HtmlNodeCollection^ nodos_a = YandereDownloader::GetHtmlNodes(HtmlContent,"//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']");; //Select all nodes with direct image link
 		Console::WriteLine("Downloading "+nodos_a->Count+" files.");
 		for each (HtmlNode^ var in nodos_a)
 		{
@@ -149,7 +138,17 @@ public:
 #pragma endregion Make Extra Function
 		Thread::Yield();
 	}
-
+	static HtmlNodeCollection^ GetHtmlNodes(String^ RawHtml,String^ Xpath){
+		HtmlDocument doc; //initialize HTML Documents
+		doc.LoadHtml(RawHtml);//load Html from RAW Html string
+		HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
+		return nodo_p->SelectNodes(Xpath); //Select all nodes with direct image link
+	}
+	value struct ReadYande_reParameters //Defines a Struc with YandereDownloader::ReadYande_re parameters needance
+	{
+		int page; 
+		array<String^>^tags;
+	};
 };
 
 
@@ -183,7 +182,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			int ActualThread = 0;
 			array<Thread^>^Threads = gcnew array<Thread^>(0);
 			array<YandereDownloader^>^DownloaderReferences = gcnew array<YandereDownloader^>(0);
-			array<ReadYande_reParameters>^Parameters = gcnew array<ReadYande_reParameters>(0);
+			array<YandereDownloader::ReadYande_reParameters>^Parameters = gcnew array<YandereDownloader::ReadYande_reParameters>(0);
 			for (int tg=0;tg<ThreadGroups;tg++){
 				for (int th = 0; th < NUMBER_OF_THREADS; th++)
 				{

@@ -4,7 +4,7 @@ Array::Resize(Parameters,ActualPage); \
 DownloaderReferences[ActualPage-1]=gcnew YandereDownloader; \
 Parameters[ActualPage-1].page=ActualPage; \
 Parameters[ActualPage-1].tags=args; \
-ParameterizedThreadStart^ ThreadDelegate = gcnew ParameterizedThreadStart(DownloaderReferences[ActualPage-1], &YandereDownloader::ParseHtmlTags) ; \
+ParameterizedThreadStart^ ThreadDelegate = gcnew ParameterizedThreadStart(DownloaderReferences[ActualPage-1], &YandereDownloader::DownloadFiles) ; \
 Threads[ActualPage-1]=gcnew Thread(ThreadDelegate); \
 Threads[ActualPage-1]->Start(Parameters[ActualPage-1]);
 
