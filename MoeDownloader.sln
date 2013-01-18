@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Yandere", "MoeDownloader\MoeDownloader.vcxproj", "{7AD1A4FE-DAFF-445F-B0CF-ECFB120DA534}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Gelbooru", "Gelbooru\Gelbooru.vcxproj", "{D1FEF861-A5B2-42ED-81B0-C37796DBDA56}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+		Description = VC++ Console App to Download apps from most famous Booru Picture Sites
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7AD1A4FE-DAFF-445F-B0CF-ECFB120DA534}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7AD1A4FE-DAFF-445F-B0CF-ECFB120DA534}.Debug|Win32.Build.0 = Debug|Win32
+		{7AD1A4FE-DAFF-445F-B0CF-ECFB120DA534}.Debug|x64.ActiveCfg = Debug|x64
+		{7AD1A4FE-DAFF-445F-B0CF-ECFB120DA534}.Debug|x64.Build.0 = Debug|x64
+		{7AD1A4FE-DAFF-445F-B0CF-ECFB120DA534}.Release|Win32.ActiveCfg = Release|Win32
+		{7AD1A4FE-DAFF-445F-B0CF-ECFB120DA534}.Release|Win32.Build.0 = Release|Win32
+		{7AD1A4FE-DAFF-445F-B0CF-ECFB120DA534}.Release|x64.ActiveCfg = Release|x64
+		{7AD1A4FE-DAFF-445F-B0CF-ECFB120DA534}.Release|x64.Build.0 = Release|x64
+		{D1FEF861-A5B2-42ED-81B0-C37796DBDA56}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D1FEF861-A5B2-42ED-81B0-C37796DBDA56}.Debug|Win32.Build.0 = Debug|Win32
+		{D1FEF861-A5B2-42ED-81B0-C37796DBDA56}.Debug|x64.ActiveCfg = Debug|x64
+		{D1FEF861-A5B2-42ED-81B0-C37796DBDA56}.Debug|x64.Build.0 = Debug|x64
+		{D1FEF861-A5B2-42ED-81B0-C37796DBDA56}.Release|Win32.ActiveCfg = Release|Win32
+		{D1FEF861-A5B2-42ED-81B0-C37796DBDA56}.Release|Win32.Build.0 = Release|Win32
+		{D1FEF861-A5B2-42ED-81B0-C37796DBDA56}.Release|x64.ActiveCfg = Release|x64
+		{D1FEF861-A5B2-42ED-81B0-C37796DBDA56}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
