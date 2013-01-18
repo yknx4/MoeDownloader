@@ -49,50 +49,51 @@ public:
 #endif
 		}
 
-		return Page_Data;
+		return Page_Data; //Returns RAW HTLM string
 	}
-	static int GetPagesNumber(array<String^>^tags)
+	static int GetPagesNumber(array<String^>^tags) //Function to get the number of pages the tags have
 	{
-		String^ texto = YandereDownloader::ReadYande_re(1,tags);
-		if (!(texto==nullptr))
+		String^ texto = YandereDownloader::ReadYande_re(1,tags);//Put RAW HTML in the String Texto
+		if (!(texto==nullptr)) //If the RAW HTML exist, do following code
 		{
-			String^ TempUrl;
-			HtmlDocument doc;
-			doc.LoadHtml(texto);
-			HtmlNode^ nodo_p = doc.DocumentNode;
-			HtmlNodeCollection^ nodos_a = nodo_p->SelectNodes("//div[@class='pagination']/a");
-			try
+			String^ PageTemp; // Create string pointer to get inner text from Html Node
+			HtmlDocument doc; //initialize HTML Documents
+			doc.LoadHtml(texto);//load Html from RAW Html string
+			HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
+			HtmlNodeCollection^ nodos_a = nodo_p->SelectNodes("//div[@class='pagination']/a"); //Select 'a' nodes from 'div' with class='pagination'
+			try //Try to read nodes
 			{
-				nodos_a->RemoveAt(nodos_a->Count-1);
-				for each (HtmlNode^ var in nodos_a)
+				nodos_a->RemoveAt(nodos_a->Count-1); //Remove an extra node that doesn't fullfill our needance
+				for each (HtmlNode^ var in nodos_a) // Cycle for each node
 				{
-					TempUrl=var->InnerText;
+					PageTemp=var->InnerText; //Put the data in PageTemp variable
 #ifdef DEBUGGING
 					Console::WriteLine(TempUrl);
 					Console::WriteLine();
 #endif
 				}
-				return Convert::ToInt32(TempUrl,10);
+				return Convert::ToInt32(PageTemp,10); //Return the last PageTemp, and so the biggest number, meanning the last page
 			}
-			catch (NullReferenceException^ e)
+			catch (NullReferenceException^ e) //If no div availavable, means it just have 1 page
 			{
-				return 1;	
+				return 1;	//return 1 page
 			}
-			return 1;
+			return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
 		}
 	}
-	void ParseHtmlTags(Object^ data){
-		ReadYande_reParameters^ Parameteres =(ReadYande_reParameters^)data;
-		String^ HtmlContent=YandereDownloader::ReadYande_re(Parameteres->page,Parameteres->tags);
-		String^ TempUrl;
-		HtmlDocument doc;
-		doc.LoadHtml(HtmlContent);
-		HtmlNode^ nodo_p = doc.DocumentNode;
-		HtmlNodeCollection^ nodos_a = nodo_p->SelectNodes("//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']");
+	void ParseHtmlTags(Object^ data){//function to Parse Html Tags and call download
+		ReadYande_reParameters^ Parameteres =(ReadYande_reParameters^)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
+		String^ HtmlContent=YandereDownloader::ReadYande_re(Parameteres->page,Parameteres->tags); //Get Raw HTML with needed parameters
+		String^ TempUrl; //Initialize string to store URL
+		HtmlDocument doc; //initialize HTML Documents
+		doc.LoadHtml(texto);//load Html from RAW Html string
+		HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
+		HtmlNodeCollection^ nodos_a = nodo_p->SelectNodes("//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']"); //Select all nodes with direct image link
 		Console::WriteLine("Downloading "+nodos_a->Count+" files.");
 		for each (HtmlNode^ var in nodos_a)
 		{
 			TempUrl=var->GetAttributeValue("href","");
+#pragma region Make Extra Function
 			Uri^ Link=gcnew Uri(TempUrl);
 			try
 			{
@@ -145,6 +146,7 @@ public:
 #endif
 			}
 		}
+#pragma endregion Make Extra Function
 		Thread::Yield();
 	}
 
