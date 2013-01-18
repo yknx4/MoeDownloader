@@ -9,6 +9,24 @@ using namespace System;
 using namespace System::Net;
 using namespace System::Threading;
 using namespace HtmlAgilityPack;
+ref class Yandere_Containers
+{
+public:
+
+	value struct ReadYande_reParameters //Defines a Struc with YandereDownloader::ReadYande_re parameters needance
+	{
+		int page; 
+		array<String^>^tags;
+	};
+	value struct ThreadGroup {
+		array<Thread^>^Threads;
+		//array<YandereDownloader^>^DownloaderReferences;
+		array<ReadYande_reParameters>^Parameters;
+	};
+
+
+};
+
 ref class YandereDownloader //MainClass yandere downloader
 {
 public:
@@ -45,7 +63,7 @@ public:
 		}
 
 		return Page_Data; //Returns RAW HTLM string
-	}
+	};
 	static int GetPagesNumber(array<String^>^tags) //Function to get the number of pages the tags have
 	{
 		String^ texto = YandereDownloader::ReadYande_re(1,tags);//Put RAW HTML in the String Texto
@@ -59,10 +77,6 @@ public:
 				for each (HtmlNode^ var in nodos_a) // Cycle for each node
 				{
 					PageTemp=var->InnerText; //Put the data in PageTemp variable
-#ifdef DEBUGGING
-					Console::WriteLine(TempUrl);
-					Console::WriteLine();
-#endif
 				}
 				return Convert::ToInt32(PageTemp,10); //Return the last PageTemp, and so the biggest number, meanning the last page
 			}
@@ -72,10 +86,13 @@ public:
 			}
 			return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
 		}
-	}
-	void DownloadFiles(Object^ data){//function to Parse Html Tags and call download
-		ReadYande_reParameters^ Parameteres =(ReadYande_reParameters^)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
+	};
+	static void DownloadFiles(Object^ data){//function to Parse Html Tags and call download
+		Yandere_Containers::ReadYande_reParameters^ Parameteres =(Yandere_Containers::ReadYande_reParameters^)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
+		array<String^>^test =gcnew array<String^>(1);
+		//test[0]=gcnew String("crossdress");
 		String^ HtmlContent=YandereDownloader::ReadYande_re(Parameteres->page,Parameteres->tags); //Get Raw HTML with needed parameters
+		//String^ HtmlContent=YandereDownloader::ReadYande_re(Parameteres->page,test); //Get Raw HTML with needed parameters
 		String^ TempUrl; //Initialize string to store URL
 		HtmlNodeCollection^ nodos_a = YandereDownloader::GetHtmlNodes(HtmlContent,"//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']");; //Select all nodes with direct image link
 		Console::WriteLine("Downloading "+nodos_a->Count+" files.");
@@ -99,11 +116,6 @@ public:
 				}
 				catch (System::ArgumentOutOfRangeException^ e)
 				{
-#ifdef DEBUGGING
-					Console::WriteLine("Error {0}", e);
-					Console::WriteLine(FilePath);
-#endif
-
 				}
 				FilePath="files/"+FilePath+FileExtension;
 				if (!(IO::File::Exists(FilePath)))
@@ -137,19 +149,34 @@ public:
 		}
 #pragma endregion Make Extra Function
 		Thread::Yield();
-	}
+	};
 	static HtmlNodeCollection^ GetHtmlNodes(String^ RawHtml,String^ Xpath){
 		HtmlDocument doc; //initialize HTML Documents
 		doc.LoadHtml(RawHtml);//load Html from RAW Html string
 		HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
 		return nodo_p->SelectNodes(Xpath); //Select all nodes with direct image link
-	}
-	value struct ReadYande_reParameters //Defines a Struc with YandereDownloader::ReadYande_re parameters needance
-	{
-		int page; 
-		array<String^>^tags;
 	};
+	static Yandere_Containers::ThreadGroup^ SetThreads(array<String^>^tags){
+		Yandere_Containers::ThreadGroup^ Threads=gcnew Yandere_Containers::ThreadGroup;
+		Threads->Threads = gcnew array<Thread^>(NUMBER_OF_THREADS);
+		Threads->Parameters = gcnew array<Yandere_Containers::ReadYande_reParameters>(NUMBER_OF_THREADS);
+		for (int th=0;th<NUMBER_OF_THREADS;th++)
+		{
+			Threads->Parameters[th].tags=tags;
+		}
+#ifdef DEBUGGING
+		for each (String^ var in Threads->Parameters[0].tags)
+		{
+			Console::WriteLine(var);
+		}
+#endif
+		//array<YandereDownloader^>^DownloaderReferences = gcnew array<YandereDownloader^>(0);
+		return Threads; //Select all nodes with direct image link
+	};
+	
 };
+
+
 
 
 
@@ -180,12 +207,19 @@ int _tmain(int argc, _TCHAR* argv[])
 			int ThreadRemainder = TotalPages % NUMBER_OF_THREADS;
 			int ActualPage = 0;
 			int ActualThread = 0;
-			array<Thread^>^Threads = gcnew array<Thread^>(0);
-			array<YandereDownloader^>^DownloaderReferences = gcnew array<YandereDownloader^>(0);
-			array<YandereDownloader::ReadYande_reParameters>^Parameters = gcnew array<YandereDownloader::ReadYande_reParameters>(0);
+			Yandere_Containers::ThreadGroup^ Threads=YandereDownloader::SetThreads(args);
+			for each (Yandere_Containers::ReadYande_reParameters var in Threads->Parameters)
+			{
+				Console::WriteLine(var.page);
+				for each ( String^ var2 in var.tags)
+				{
+					Console::WriteLine(var2);
+				}
+			}
 			for (int tg=0;tg<ThreadGroups;tg++){
 				for (int th = 0; th < NUMBER_OF_THREADS; th++)
 				{
+					ActualThread=th;
 					ActualPage=tg*NUMBER_OF_THREADS+th+1;
 					THREADING_MACRO
 #ifdef DEBUGGING
@@ -200,7 +234,7 @@ int _tmain(int argc, _TCHAR* argv[])
 #endif // DEBUGGING
 				for (int tw=0;tw<NUMBER_OF_THREADS;tw++)
 				{
-					ActualThread=tg*NUMBER_OF_THREADS+tw;
+					ActualThread=tw;
 					THREADING_MACRO_JOINER
 #ifdef DEBUGGING
 					THREADING_MACRO_JOINER_DEBUGGING
@@ -210,6 +244,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				if (ThreadRemainder>0){
 					for (int tr=0;tr<ThreadRemainder;tr++)
 					{
+						ActualThread=tr;
 						ActualPage =ThreadGroups*NUMBER_OF_THREADS+tr+1;
 						THREADING_MACRO
 #ifdef DEBUGGING
@@ -221,7 +256,7 @@ int _tmain(int argc, _TCHAR* argv[])
 #endif // DEBUGGING
 					for (int trj=0;trj<ThreadRemainder;trj++)
 					{
-						ActualThread=ThreadGroups*NUMBER_OF_THREADS+trj;
+						ActualThread=trj;
 						THREADING_MACRO_JOINER
 #ifdef DEBUGGING
 						THREADING_MACRO_JOINER_DEBUGGING
@@ -232,8 +267,6 @@ int _tmain(int argc, _TCHAR* argv[])
 #ifdef DEBUGGING
 			Console::WriteLine("All Threads terminated");
 #endif // DEBUGGING
-
-
 		} 
 		else
 		{
