@@ -77,8 +77,8 @@ public:
 			{
 				return 1;	//return 1 page
 			}
-			return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
 		}
+		return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
 	};
 	static void DownloadFiles(Object^ data){//function to Parse Html Tags and call download
 		Yandere_Containers::ReadYande_reParameters^ Parameteres =(Yandere_Containers::ReadYande_reParameters^)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
