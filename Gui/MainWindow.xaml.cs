@@ -29,7 +29,7 @@ namespace Gui
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            String AppPath = @"C:\\Users\\Yknx\\Documents\\Visual Studio 2012\\Projects\\MoeDownloader\\x64\\Debug\\Yandere.exe ";
+            String AppPath = @"Yandere.exe ";
             //System.Diagnostics.Process.Start(tagsparameter);
             Process Proceso = new Process();
             Proceso.StartInfo.FileName = AppPath;

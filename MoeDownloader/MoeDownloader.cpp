@@ -196,14 +196,14 @@ int _tmain(int argc, _TCHAR* argv[])
 			int ActualPage = 0;
 			int ActualThread = 0;
 			Yandere_Containers::ThreadGroup^ Threads=YandereDownloader::SetThreads(args);
-			for each (Yandere_Containers::ReadYande_reParameters var in Threads->Parameters)
+			/*for each (Yandere_Containers::ReadYande_reParameters var in Threads->Parameters)
 			{
 				Console::WriteLine(var.page);
 				for each ( String^ var2 in var.tags)
 				{
 					Console::WriteLine(var2);
 				}
-			}
+			}*/
 			for (int tg=0;tg<ThreadGroups;tg++){
 				for (int th = 0; th < NUMBER_OF_THREADS; th++)
 				{
