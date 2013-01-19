@@ -1,8 +1,5 @@
 // MoeDownloader.cpp : Defines the entry point for the console application.
 //
-//
-//
-
 #include "stdafx.h"
 //#define DEBUGGING //Uncomment this line to enable special debugging procedures
 using namespace System;
@@ -12,7 +9,6 @@ using namespace HtmlAgilityPack;
 ref class Yandere_Containers
 {
 public:
-
 	value struct ReadYande_reParameters //Defines a Struc with YandereDownloader::ReadYande_re parameters needance
 	{
 		int page; 
@@ -23,10 +19,7 @@ public:
 		//array<YandereDownloader^>^DownloaderReferences;
 		array<ReadYande_reParameters>^Parameters;
 	};
-
-
 };
-
 ref class YandereDownloader //MainClass yandere downloader
 {
 public:
@@ -90,16 +83,13 @@ public:
 	static void DownloadFiles(Object^ data){//function to Parse Html Tags and call download
 		Yandere_Containers::ReadYande_reParameters^ Parameteres =(Yandere_Containers::ReadYande_reParameters^)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
 		array<String^>^test =gcnew array<String^>(1);
-		//test[0]=gcnew String("crossdress");
 		String^ HtmlContent=YandereDownloader::ReadYande_re(Parameteres->page,Parameteres->tags); //Get Raw HTML with needed parameters
-		//String^ HtmlContent=YandereDownloader::ReadYande_re(Parameteres->page,test); //Get Raw HTML with needed parameters
 		String^ TempUrl; //Initialize string to store URL
 		HtmlNodeCollection^ nodos_a = YandereDownloader::GetHtmlNodes(HtmlContent,"//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']");; //Select all nodes with direct image link
-		Console::WriteLine("Downloading "+nodos_a->Count+" files.");
+		Console::WriteLine("Downloading "+nodos_a->Count+" files."); //Write the number of downloadable files
 		for each (HtmlNode^ var in nodos_a)
 		{
 			TempUrl=var->GetAttributeValue("href","");
-#pragma region Make Extra Function
 			Uri^ Link=gcnew Uri(TempUrl);
 			try
 			{
@@ -130,8 +120,7 @@ public:
 				} 
 				else
 				{
-					//Console::WriteLine(FilePath+" Already Exists");
-					Console::WriteLine("Already Exists");
+					Console::WriteLine(FilePath+" Already Exists");
 				}
 					
 			}
@@ -147,7 +136,6 @@ public:
 #endif
 			}
 		}
-#pragma endregion Make Extra Function
 		Thread::Yield();
 	};
 	static HtmlNodeCollection^ GetHtmlNodes(String^ RawHtml,String^ Xpath){
