@@ -1,5 +1,5 @@
 #define THREADING_MACRO Threads->Parameters[ActualThread].page=ActualPage; \
-ParameterizedThreadStart^ ThreadDelegate = gcnew ParameterizedThreadStart( &YandereDownloader::DownloadFiles) ; \
+ParameterizedThreadStart^ ThreadDelegate = gcnew ParameterizedThreadStart( &DanbooruDownloader::DownloadFiles) ; \
 Threads->Threads[ActualThread]=gcnew Thread(ThreadDelegate); \
 Threads->Threads[ActualThread]->Start(Threads->Parameters[ActualThread]);
 

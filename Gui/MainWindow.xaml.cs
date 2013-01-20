@@ -76,6 +76,18 @@ namespace Gui
             StartApp(AppPath);
             //MessageBox.Show(tagsparameter);
         }
+        private void idol_at_sc(object sender, RoutedEventArgs e)
+        {
+            String AppPath = @"idol@sc.exe ";
+            StartApp(AppPath);
+            //MessageBox.Show(tagsparameter);
+        }
+        private void gelbooru(object sender, RoutedEventArgs e)
+        {
+            String AppPath = @"gelbooru.exe ";
+            StartApp(AppPath);
+            //MessageBox.Show(tagsparameter);
+        }
         public void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             TextBox tb = (TextBox)sender;

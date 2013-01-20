@@ -97,8 +97,11 @@ public:
 				String^ FilePath = gcnew String("");
 				String^ FileExtension = gcnew String("");
 				FilePath=Link->Segments[3];
-				FileExtension=FilePath->Substring(FilePath->Length-4,4);
-				FilePath=FilePath->Replace(SITE_NAME+"%20","");
+				FileExtension=FilePath;
+				FileExtension=FileExtension->Replace("jpeg","jpg");
+				//FileExtension=FileExtension->Replace("?"+Links[i]->ID,"");
+				FileExtension=FileExtension->Substring(FileExtension->Length-4,4);
+				FilePath=FilePath->Replace(SITE_NAME+".com-%20","");
 				FilePath=Uri::UnescapeDataString(FilePath);
 				FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
 				FilePath=FilePath->Substring(0,FilePath->Length-4);

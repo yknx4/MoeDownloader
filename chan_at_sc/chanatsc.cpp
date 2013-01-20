@@ -118,7 +118,10 @@ public:
 				String^ FileExtension = gcnew String("");
 				FilePath=Links[i]->ID+" "+Links[i]->Tags;
 				FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
-				FileExtension=Links[i]->Link->Substring(Links[i]->Link->Length-4,4);
+				FileExtension=Links[i]->Link;
+				FileExtension=FileExtension->Replace("jpeg","jpg");
+				//FileExtension=FileExtension->Replace("?"+Links[i]->ID,"");
+				FileExtension=FileExtension->Substring(FileExtension->Length-4,4);
 				//FilePath=FilePath->Replace("yande.re%20","");
 				//FilePath=Uri::UnescapeDataString(FilePath);
 				//FilePath=Links[i]->Link->Substring(0,FilePath->Length-4);

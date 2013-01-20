@@ -22,7 +22,7 @@
     <ProjectGuid>{89EA91AD-DDFA-4607-96C8-4E00693C7F72}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>idol_sc1</RootNamespace>
-    <ProjectName>idol@sc1</ProjectName>
+    <ProjectName>idol@sc</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
