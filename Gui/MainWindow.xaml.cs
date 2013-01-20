@@ -27,7 +27,7 @@ namespace Gui
             InitializeComponent();
         }
 
-        private void Button_Click_1(object sender, RoutedEventArgs e)
+        private void Yandere(object sender, RoutedEventArgs e)
         {
             String AppPath = @"Yandere.exe ";
             //System.Diagnostics.Process.Start(tagsparameter);
@@ -44,7 +44,7 @@ namespace Gui
             }
             //MessageBox.Show(tagsparameter);
         }
-        private void Button_Click_2(object sender, RoutedEventArgs e)
+        private void Danbooru(object sender, RoutedEventArgs e)
         {
             String AppPath = @"Danbooru.exe ";
             //System.Diagnostics.Process.Start(tagsparameter);
@@ -61,7 +61,7 @@ namespace Gui
             }
             //MessageBox.Show(tagsparameter);
         }
-        private void Button_Click_3(object sender, RoutedEventArgs e)
+        private void Konachan(object sender, RoutedEventArgs e)
         {
             String AppPath = @"Konachan.exe ";
             //System.Diagnostics.Process.Start(tagsparameter);

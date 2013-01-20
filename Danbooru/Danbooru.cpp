@@ -52,7 +52,7 @@ public:
 	static String^ ReadDanbooru(int page, array<String^>^tags) //Function to get RAW html source code from site with 'page' and 'tags' as source
 	{
 		String^ Page_Data;//RAW Html string initialization
-		String^ FinalUrl= gcnew String("http://danbooru.donmai.us/post?page=");//URL String initialization
+		String^ FinalUrl= gcnew String(DOMAIN_URL+"/post?page=");//URL String initialization
 		FinalUrl += page.ToString() + "&commit=Search&tags=";//Add page and "&tags=" to URL
 		for each (String^ tag in tags)//Cycle to add each tag to URL
 		{
@@ -124,7 +124,7 @@ public:
 				//FilePath=Links[i]->Link->Substring(0,FilePath->Length-4);
 				try
 				{
-					FilePath=FilePath->Substring(0,160);
+					FilePath=FilePath->Substring(0,140);
 				}
 				catch (System::ArgumentOutOfRangeException^ e)
 				{
@@ -155,6 +155,7 @@ public:
 #endif
 #ifndef _DEBUG
 				Console::WriteLine("Cannot Download {0}", Links[i]->Link);
+				Console::WriteLine("Because {0}", e);
 #endif
 			}
 		}
@@ -238,16 +239,16 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	Console::BackgroundColor=ConsoleColor::White;
 	Console::ForegroundColor=ConsoleColor::Black;
-	Console::Title="Yande.re Batch image downloader";
+	Console::Title=SITE_NAME+" Batch image downloader";
 	array<String^>^args = Environment::GetCommandLineArgs();
 	bool CheckTags=0;
 	if ( args == nullptr || args->Length == 1 )
 	{
 		Console::BackgroundColor=ConsoleColor::Red;
 		Console::WriteLine("Specify the tags to crawl");
-		Console::WriteLine("Usage: Danbooru moe suzumiya_haruhi");
+		Console::WriteLine("Usage: "+SITE_NAME+" moe suzumiya_haruhi");
 		Console::WriteLine("To download pictures with tags moe and suzumiya_haruhi");
-		Console::WriteLine("Remember Danbooru threats spaces as underline score");
+		Console::WriteLine("Remember "+SITE_NAME+" threats spaces as underline score");
 		return 1;
 	}else
 	{
