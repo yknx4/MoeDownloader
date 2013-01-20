@@ -26,56 +26,48 @@ namespace Gui
         {
             InitializeComponent();
         }
-
-        private void Yandere(object sender, RoutedEventArgs e)
+        public void StartApp(String AppPath)
         {
-            String AppPath = @"Yandere.exe ";
-            //System.Diagnostics.Process.Start(tagsparameter);
             Process Proceso = new Process();
             Proceso.StartInfo.FileName = AppPath;
             Proceso.StartInfo.Arguments = tags.Text;
-            if (tags.Text=="")
+            if (tags.Text == "")
             {
                 MessageBox.Show("You have to put at least 1 tag");
-            } 
+            }
             else
             {
                 Proceso.Start();
             }
+        }
+        private void Yandere(object sender, RoutedEventArgs e)
+        {
+            String AppPath = @"Yandere.exe ";
+            StartApp(AppPath);
             //MessageBox.Show(tagsparameter);
         }
         private void Danbooru(object sender, RoutedEventArgs e)
         {
             String AppPath = @"Danbooru.exe ";
-            //System.Diagnostics.Process.Start(tagsparameter);
-            Process Proceso = new Process();
-            Proceso.StartInfo.FileName = AppPath;
-            Proceso.StartInfo.Arguments = tags.Text;
-            if (tags.Text == "")
-            {
-                MessageBox.Show("You have to put at least 1 tag");
-            }
-            else
-            {
-                Proceso.Start();
-            }
+            StartApp(AppPath);
             //MessageBox.Show(tagsparameter);
         }
         private void Konachan(object sender, RoutedEventArgs e)
         {
             String AppPath = @"Konachan.exe ";
-            //System.Diagnostics.Process.Start(tagsparameter);
-            Process Proceso = new Process();
-            Proceso.StartInfo.FileName = AppPath;
-            Proceso.StartInfo.Arguments = tags.Text;
-            if (tags.Text == "")
-            {
-                MessageBox.Show("You have to put at least 1 tag");
-            }
-            else
-            {
-                Proceso.Start();
-            }
+            StartApp(AppPath);
+            //MessageBox.Show(tagsparameter);
+        }
+        private void _3dbooru(object sender, RoutedEventArgs e)
+        {
+            String AppPath = @"3dbooru.exe ";
+            StartApp(AppPath);
+            //MessageBox.Show(tagsparameter);
+        }
+        private void vectorbooru(object sender, RoutedEventArgs e)
+        {
+            String AppPath = @"vectorbooru.exe ";
+            StartApp(AppPath);
             //MessageBox.Show(tagsparameter);
         }
         public void TextBox_GotFocus(object sender, RoutedEventArgs e)

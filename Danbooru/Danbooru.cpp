@@ -52,7 +52,7 @@ public:
 	static String^ ReadDanbooru(int page, array<String^>^tags) //Function to get RAW html source code from site with 'page' and 'tags' as source
 	{
 		String^ Page_Data;//RAW Html string initialization
-		String^ FinalUrl= gcnew String(DOMAIN_URL+"/post?page=");//URL String initialization
+		String^ FinalUrl= gcnew String(SITE_DOMAIN+"/post?page=");//URL String initialization
 		FinalUrl += page.ToString() + "&commit=Search&tags=";//Add page and "&tags=" to URL
 		for each (String^ tag in tags)//Cycle to add each tag to URL
 		{
@@ -197,7 +197,7 @@ public:
 		int nodecount=0;
 		for each (HtmlNode^ a_refs in HtmlNodes)
 		{
-			LinkData[nodecount]=GetPostData(DOMAIN_URL+a_refs->GetAttributeValue("href",""));
+			LinkData[nodecount]=GetPostData(SITE_DOMAIN+a_refs->GetAttributeValue("href",""));
 			//Console::WriteLine(Links[nodecount]);
 			nodecount++;
 		}
@@ -329,5 +329,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		Console::ResetColor();
 		return 0;
 	}
-	
+#ifdef _DEBUG
+	Console::ReadKey();
+#endif // _DEBUG
 }

@@ -269,5 +269,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		Console::ResetColor();
 		return 0;
 	}
-	
+#ifdef _DEBUG
+	Console::ReadKey();
+#endif // _DEBUG
 }
