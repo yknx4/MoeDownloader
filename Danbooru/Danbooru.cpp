@@ -110,6 +110,10 @@ public:
 		Console::WriteLine("Downloading "+LinksCount+" files."); //Write the number of downloadable files
 		for (int i=0;i<LinksCount;i++)
 		{
+			if (Links[i]==nullptr)
+			{
+				continue;
+			}
 			//Console::WriteLine(Links[i]);
 			Uri^ Link=gcnew Uri(Links[i]->Link);
 			try
@@ -147,7 +151,7 @@ public:
 				{
 					Console::WriteLine(FilePath+" Already Exists");
 				}
-					
+
 			}
 			catch (WebException^ e)
 			{
@@ -200,7 +204,13 @@ public:
 		int nodecount=0;
 		for each (HtmlNode^ a_refs in HtmlNodes)
 		{
-			LinkData[nodecount]=GetPostData(SITE_DOMAIN+a_refs->GetAttributeValue("href",""));
+			Danbooru_Containers::PostData^ a_r_data =GetPostData(SITE_DOMAIN+"/"+a_refs->GetAttributeValue("href",""));
+			if (a_r_data!=nullptr){
+				LinkData[nodecount]=a_r_data;
+			}else
+			{
+				LinkData[nodecount]=nullptr;
+			}
 			//Console::WriteLine(Links[nodecount]);
 			nodecount++;
 		}
@@ -208,7 +218,7 @@ public:
 		Console::WriteLine("The total nodes processed are "+nodecount);
 #endif // DEBUGGING
 		return LinkData;
-};
+	};
 	static Danbooru_Containers::PostData^ GetPostData(String^ PostUrl) //Function to get Download Link from page url
 	{
 		Uri^ Link=gcnew Uri(PostUrl);
@@ -217,20 +227,24 @@ public:
 		//Console::WriteLine(RawHtml);
 		HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,"//div[@class='content']/div/img[@id='image']");
 		//Console::WriteLine("Total nodes in GetPostDirectLink are: "+HtmlNodes->Count);
-		for each (HtmlNode^ img in HtmlNodes)
+		if (HtmlNodes!=nullptr)
 		{
-			PostData->Link=img->GetAttributeValue("src","false");
-			PostData->Tags=img->GetAttributeValue("alt","false");
+			for each (HtmlNode^ img in HtmlNodes)
+			{
+				PostData->Link=img->GetAttributeValue("src","false");
+				PostData->Tags=img->GetAttributeValue("alt","false");
 #ifdef _DEBUG
-			Console::WriteLine("Direct link of post "+PostUrl+" is "+PostData->Link);
-			Console::WriteLine("Tags of post "+PostUrl+" is "+PostData->Tags);
+				Console::WriteLine("Direct link of post "+PostUrl+" is "+PostData->Link);
+				Console::WriteLine("Tags of post "+PostUrl+" is "+PostData->Tags);
 #endif // DEBUGGING
+			}
+			PostData->ID=Link->Segments[3];
+#ifdef _DEBUG
+			Console::WriteLine("ID of post "+PostUrl+" is "+PostData->ID);
+#endif // DEBUGGING
+			return PostData;
 		}
-		PostData->ID=Link->Segments[3];
-#ifdef _DEBUG
-		Console::WriteLine("ID of post "+PostUrl+" is "+PostData->ID);
-#endif // DEBUGGING
-		return PostData;
+		return nullptr;
 	};
 };
 
