@@ -33,7 +33,7 @@ public:
 			FinalUrl+=tag+"+";//each tags must be separated by '+' so each tag is added to URL after '+'
 		}
 		FinalUrl=FinalUrl->Remove(FinalUrl->Length-1);//removes the extra '+' from URL output
-#ifdef DEBUGGING
+#ifdef _DEBUG
 		System::Console::WriteLine(FinalUrl);
 #endif
 		try
@@ -46,10 +46,10 @@ public:
 		{
 			Console::ForegroundColor=ConsoleColor::Red;
 			Console::BackgroundColor=ConsoleColor::Black;
-#ifdef DEBUGGING
+#ifdef _DEBUG
 			Console::WriteLine("Cannot connect to Host {0}", e); //Detailed error code
 #endif
-#ifndef DEBUGGING
+#ifndef _DEBUG
 			Console::WriteLine("Cannot connect to Host");
 			Console::WriteLine("Is Internet connection alive?");
 #endif
@@ -113,7 +113,7 @@ public:
 					WebClient^ Host_Reader = gcnew WebClient;
 					Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING);
 					Console::WriteLine("Downloading "+FilePath);
-#ifndef DEBUGGING
+#ifndef _DEBUG
 					Host_Reader->DownloadFile(Link,FilePath);  
 #endif // !DEBUGGING
 
@@ -128,10 +128,10 @@ public:
 			{
 				Console::ForegroundColor=ConsoleColor::Red;
 				Console::BackgroundColor=ConsoleColor::Black;
-#ifdef DEBUGGING
+#ifdef _DEBUG
 				Console::WriteLine("Cannot connect to Host {0}", e);
 #endif
-#ifndef DEBUGGING
+#ifndef _DEBUG
 				Console::WriteLine("Cannot Download {0}", TempUrl);
 #endif
 			}
@@ -152,7 +152,7 @@ public:
 		{
 			Threads->Parameters[th].tags=tags;
 		}
-#ifdef DEBUGGING
+#ifdef _DEBUG
 		for each (String^ var in Threads->Parameters[0].tags)
 		{
 			Console::WriteLine(var);
@@ -210,11 +210,11 @@ int _tmain(int argc, _TCHAR* argv[])
 					ActualThread=th;
 					ActualPage=tg*NUMBER_OF_THREADS+th+1;
 					THREADING_MACRO
-#ifdef DEBUGGING
+#ifdef _DEBUG
 						THREADING_MACRO_DEBUGGING
 #endif // DEBUGGING
 				}
-#ifdef DEBUGGING
+#ifdef _DEBUG
 				if (ThreadRemainder==0)
 				{
 					Console::WriteLine("All Threads Started");
@@ -224,7 +224,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					ActualThread=tw;
 					THREADING_MACRO_JOINER
-#ifdef DEBUGGING
+#ifdef _DEBUG
 						THREADING_MACRO_JOINER_DEBUGGING
 #endif // DEBUGGING
 				}
@@ -235,24 +235,24 @@ int _tmain(int argc, _TCHAR* argv[])
 					ActualThread=tr;
 					ActualPage =ThreadGroups*NUMBER_OF_THREADS+tr+1;
 					THREADING_MACRO
-#ifdef DEBUGGING
+#ifdef _DEBUG
 						THREADING_MACRO_DEBUGGING
 #endif // DEBUGGING
 				}
-#ifdef DEBUGGING
+#ifdef _DEBUG
 				Console::WriteLine("All Threads Started");
 #endif // DEBUGGING
 				for (int trj=0;trj<ThreadRemainder;trj++)
 				{
 					ActualThread=trj;
 					THREADING_MACRO_JOINER
-#ifdef DEBUGGING
+#ifdef _DEBUG
 						THREADING_MACRO_JOINER_DEBUGGING
 #endif // DEBUGGING
 				}
 			}
 
-#ifdef DEBUGGING
+#ifdef _DEBUG
 			Console::WriteLine("All Threads terminated");
 #endif // DEBUGGING
 		} 

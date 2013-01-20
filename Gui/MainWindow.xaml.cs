@@ -44,6 +44,40 @@ namespace Gui
             }
             //MessageBox.Show(tagsparameter);
         }
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            String AppPath = @"Danbooru.exe ";
+            //System.Diagnostics.Process.Start(tagsparameter);
+            Process Proceso = new Process();
+            Proceso.StartInfo.FileName = AppPath;
+            Proceso.StartInfo.Arguments = tags.Text;
+            if (tags.Text == "")
+            {
+                MessageBox.Show("You have to put at least 1 tag");
+            }
+            else
+            {
+                Proceso.Start();
+            }
+            //MessageBox.Show(tagsparameter);
+        }
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            String AppPath = @"Konachan.exe ";
+            //System.Diagnostics.Process.Start(tagsparameter);
+            Process Proceso = new Process();
+            Proceso.StartInfo.FileName = AppPath;
+            Proceso.StartInfo.Arguments = tags.Text;
+            if (tags.Text == "")
+            {
+                MessageBox.Show("You have to put at least 1 tag");
+            }
+            else
+            {
+                Proceso.Start();
+            }
+            //MessageBox.Show(tagsparameter);
+        }
         public void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             TextBox tb = (TextBox)sender;

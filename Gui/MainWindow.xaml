@@ -21,9 +21,9 @@
         <TextBox x:Name="tags" HorizontalAlignment="Left" Height="28" Margin="54,14,0,47" TextWrapping="Wrap" Text="suzumiya_haruhi moe loli" VerticalAlignment="Center" Width="344" FontSize="14" FontStyle="Italic" GotFocus="TextBox_GotFocus"/>
         <Button x:Name="yanderebutton" Content="Yande.re" HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" Click="Button_Click_1"/>
         <Button Content="Gelbooru" HorizontalAlignment="Left" Margin="90,53,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" IsEnabled="False"/>
-        <Button Content="Danbooru" HorizontalAlignment="Left" Margin="170,53,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" IsEnabled="False"/>
+        <Button Content="Danbooru" HorizontalAlignment="Left" Margin="170,53,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" Click="Button_Click_2"/>
         <Button Content="Safebooru" HorizontalAlignment="Left" Margin="250,53,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" IsEnabled="False"/>
-        <Button Content="Konachan" HorizontalAlignment="Left" Margin="330,53,-5,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" IsEnabled="False"/>
+        <Button Content="Konachan" HorizontalAlignment="Left" Margin="330,53,-5,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" Click="Button_Click_3"/>
     </Grid>
 
 </Controls:MetroWindow>

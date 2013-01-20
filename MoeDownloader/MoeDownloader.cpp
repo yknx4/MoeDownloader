@@ -1,7 +1,7 @@
 // MoeDownloader.cpp : Defines the entry point for the console application.
 //
 #include "stdafx.h"
-//#define DEBUGGING //Uncomment this line to enable special debugging procedures
+//#define _DEBUG //Uncomment this line to enable special debugging procedures
 using namespace System;
 using namespace System::Net;
 using namespace System::Threading;
@@ -26,14 +26,15 @@ public:
 	static String^ ReadYande_re(int page, array<String^>^tags) //Function to get RAW html source code from site with 'page' and 'tags' as source
 	{
 		String^ Page_Data;//RAW Html string initialization
-		String^ FinalUrl= gcnew String("https://yande.re/post?page=");//URL String initialization
+		String^ FinalUrl= gcnew String(SITE_DOMAIN+"post?page=");//URL String initialization
+		//String^ FinalUrl= gcnew String("http://konachan.com/post?page=");//URL String initialization
 		FinalUrl += page.ToString() + "&tags=";//Add page and "&tags=" to URL
 		for each (String^ tag in tags)//Cycle to add each tag to URL
 		{
 			FinalUrl+=tag+"+";//each tags must be separated by '+' so each tag is added to URL after '+'
 		}
 		FinalUrl=FinalUrl->Remove(FinalUrl->Length-1);//removes the extra '+' from URL output
-#ifdef DEBUGGING
+#ifdef _DEBUG
 		System::Console::WriteLine(FinalUrl);
 #endif
 		try
@@ -46,10 +47,10 @@ public:
 		{
 			Console::ForegroundColor=ConsoleColor::Red;
 			Console::BackgroundColor=ConsoleColor::Black;
-#ifdef DEBUGGING
+#ifdef _DEBUG
 			Console::WriteLine("Cannot connect to Host {0}", e); //Detailed error code
 #endif
-#ifndef DEBUGGING
+#ifndef _DEBUG
 			Console::WriteLine("Cannot connect to Host");
 			Console::WriteLine("Is Internet connection alive?");
 #endif
@@ -97,8 +98,9 @@ public:
 				String^ FileExtension = gcnew String("");
 				FilePath=Link->Segments[3];
 				FileExtension=FilePath->Substring(FilePath->Length-4,4);
-				FilePath=FilePath->Replace("yande.re%20","");
+				FilePath=FilePath->Replace(SITE_NAME+"%20","");
 				FilePath=Uri::UnescapeDataString(FilePath);
+				FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
 				FilePath=FilePath->Substring(0,FilePath->Length-4);
 				try
 				{
@@ -107,13 +109,13 @@ public:
 				catch (System::ArgumentOutOfRangeException^ e)
 				{
 				}
-				FilePath="files/"+FilePath+FileExtension;
+				FilePath=SITE_NAME+"/"+FilePath+FileExtension;
 				if (!(IO::File::Exists(FilePath)))
 				{
 					WebClient^ Host_Reader = gcnew WebClient;
 					Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING);
 					Console::WriteLine("Downloading "+FilePath);
-#ifndef DEBUGGING
+#ifndef _DEBUG
 					Host_Reader->DownloadFile(Link,FilePath);  
 #endif // !DEBUGGING
 
@@ -128,10 +130,10 @@ public:
 			{
 				Console::ForegroundColor=ConsoleColor::Red;
 				Console::BackgroundColor=ConsoleColor::Black;
-#ifdef DEBUGGING
+#ifdef _DEBUG
 				Console::WriteLine("Cannot connect to Host {0}", e);
 #endif
-#ifndef DEBUGGING
+#ifndef _DEBUG
 				Console::WriteLine("Cannot Download {0}", TempUrl);
 #endif
 			}
@@ -152,7 +154,7 @@ public:
 		{
 			Threads->Parameters[th].tags=tags;
 		}
-#ifdef DEBUGGING
+#ifdef _DEBUG
 		for each (String^ var in Threads->Parameters[0].tags)
 		{
 			Console::WriteLine(var);
@@ -172,22 +174,25 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	Console::BackgroundColor=ConsoleColor::White;
 	Console::ForegroundColor=ConsoleColor::Black;
-	Console::Title="Yande.re Batch image downloader";
+	Console::Title=SITE_NAME+" Batch image downloader";
 	array<String^>^args = Environment::GetCommandLineArgs();
 	bool CheckTags=0;
 	if ( args == nullptr || args->Length == 1 )
 	{
 		Console::BackgroundColor=ConsoleColor::Red;
 		Console::WriteLine("Specify the tags to crawl");
-		Console::WriteLine("Usage: MoeDownloader moe suzumiya_haruhi");
+		Console::WriteLine("Usage: "+SITE_NAME+" moe suzumiya_haruhi");
 		Console::WriteLine("To download pictures with tags moe and suzumiya_haruhi");
-		Console::WriteLine("Remember Yande.re threats spaces as underline score");
+		Console::WriteLine("Remember "+SITE_NAME+" threats spaces as underline score");
 		return 1;
 	}else
 	{
 		Array::Reverse(args);
 		Array::Resize(args,args->Length -1);
 		CheckTags=YandereDownloader::ReadYande_re(1,args)->Contains("<a class=\"directlink largeimg\"")||YandereDownloader::ReadYande_re(1,args)->Contains("<a class=\"directlink smallimg\"");
+#ifdef _DEBUG
+		Console::WriteLine("Checking tags.... Returned "+CheckTags);
+#endif // DEBUGGING
 		if (CheckTags)
 		{
 			int TotalPages =YandereDownloader::GetPagesNumber(args);
@@ -210,11 +215,11 @@ int _tmain(int argc, _TCHAR* argv[])
 					ActualThread=th;
 					ActualPage=tg*NUMBER_OF_THREADS+th+1;
 					THREADING_MACRO
-#ifdef DEBUGGING
+#ifdef _DEBUG
 					THREADING_MACRO_DEBUGGING
 #endif // DEBUGGING
 				}
-#ifdef DEBUGGING
+#ifdef _DEBUG
 				if (ThreadRemainder==0)
 				{
 					Console::WriteLine("All Threads Started");
@@ -224,7 +229,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					ActualThread=tw;
 					THREADING_MACRO_JOINER
-#ifdef DEBUGGING
+#ifdef _DEBUG
 					THREADING_MACRO_JOINER_DEBUGGING
 #endif // DEBUGGING
 				}
@@ -235,24 +240,24 @@ int _tmain(int argc, _TCHAR* argv[])
 						ActualThread=tr;
 						ActualPage =ThreadGroups*NUMBER_OF_THREADS+tr+1;
 						THREADING_MACRO
-#ifdef DEBUGGING
+#ifdef _DEBUG
 						THREADING_MACRO_DEBUGGING
 #endif // DEBUGGING
 					}
-#ifdef DEBUGGING
+#ifdef _DEBUG
 					Console::WriteLine("All Threads Started");
 #endif // DEBUGGING
 					for (int trj=0;trj<ThreadRemainder;trj++)
 					{
 						ActualThread=trj;
 						THREADING_MACRO_JOINER
-#ifdef DEBUGGING
+#ifdef _DEBUG
 						THREADING_MACRO_JOINER_DEBUGGING
 #endif // DEBUGGING
 					}
 				}
 
-#ifdef DEBUGGING
+#ifdef _DEBUG
 			Console::WriteLine("All Threads terminated");
 #endif // DEBUGGING
 		} 

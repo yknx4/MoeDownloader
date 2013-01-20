@@ -15,4 +15,6 @@
 #include "Threading.h"
 #define NUMBER_OF_THREADS 3
 #define USER_AGENT_STRING "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5"
+#define SITE_NAME "yande.re"
+#define SITE_DOMAIN "https://yande.re/"
 // TODO: reference additional headers your program requires here
