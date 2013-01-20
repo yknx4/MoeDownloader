@@ -70,6 +70,12 @@ namespace Gui
             StartApp(AppPath);
             //MessageBox.Show(tagsparameter);
         }
+        private void chan_at_sc(object sender, RoutedEventArgs e)
+        {
+            String AppPath = @"chan@sc.exe ";
+            StartApp(AppPath);
+            //MessageBox.Show(tagsparameter);
+        }
         public void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             TextBox tb = (TextBox)sender;

@@ -25,7 +25,7 @@
         <Button x:Name="safeboorub" Content="Safebooru" HorizontalAlignment="Left" Margin="250,53,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" IsEnabled="False"/>
         <Button x:Name="konachanb" Content="Konachan" HorizontalAlignment="Left" Margin="330,53,-5,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" Click="Konachan"/>
         <Button x:Name="_3dboorub" Content="3dbooru" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" Click="_3dbooru"/>
-        <Button x:Name="chan_at_scb" Content="chan@sc" HorizontalAlignment="Left" Margin="90,85,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" IsEnabled="False"/>
+        <Button x:Name="chan_at_scb" Content="chan@sc" HorizontalAlignment="Left" Margin="90,85,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" Click="chan_at_sc"/>
         <Button x:Name="idol_at_scb" Content="idol@sc" HorizontalAlignment="Left" Margin="170,85,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" IsEnabled="False"/>
         <Button x:Name="xboorub" Content="Xbooru" HorizontalAlignment="Left" Margin="250,85,0,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" IsEnabled="False"/>
         <Button x:Name="vectorboorub" Content="Vectorbooru" HorizontalAlignment="Left" Margin="330,85,-5,0" VerticalAlignment="Top" Width="75" Style="{DynamicResource SquareButtonStyle}" Click="vectorbooru"/>
