@@ -65,8 +65,10 @@ public:
 ref class DanbooruDownloader //MainClass yandere downloader
 {
 public:
+	//static String^ st_dm;
 	static String^ ReadDanbooru(int page, array<String^>^tags) //Function to get RAW html source code from site with 'page' and 'tags' as source
 	{
+		//Console::WriteLine(st_dm);
 		String^ Page_Data;//RAW Html string initialization
 		String^ FinalUrl= gcnew String(SITE_DOMAIN+"/index.php?page=post&pid=");//URL String initialization
 		FinalUrl += (page*PID_MULT).ToString() + "&s=list&tags=";//Add page and "&tags=" to URL
@@ -295,6 +297,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		Array::Reverse(args);
 		Array::Resize(args,args->Length -1);
+		//DanbooruDownloader::st_dm=gcnew String("Static dentro de class");
 		CheckTags=DanbooruDownloader::ReadDanbooru(0,args)->Contains("class=\"preview\"/>");
 #ifdef _DEBUG
 		Console::WriteLine("Checking tags.... Returned "+CheckTags);

@@ -6,9 +6,58 @@ using namespace System;
 using namespace System::Net;
 using namespace System::Threading;
 using namespace HtmlAgilityPack;
-ref class AditionalFunctions
+ref class Danbooru_Containers
 {
 public:
+	/*value struct ReadDanbooruParameters //Defines a Struc with YandereDownloader::ReadYande_re parameters needance
+	{
+		int page; 
+		array<String^>^tags;
+	};*/
+	value struct ThreadGroup {
+		array<Thread^>^Threads;
+		//array<YandereDownloader^>^DownloaderReferences;
+		array<int>^Pages;
+	};
+	value struct PostData {
+		String^ Link;
+		String^ ID;
+		String^ Tags;
+	};
+};
+ref class DanbooruDownloader //MainClass yandere downloader
+{
+private:
+	static array<String^>^ args;
+	static array<String^>^ tags;
+	static int START_PAGE_INDEX;
+	static int NUMBER_OF_THREADS;
+	static int SEGMENTDEPTH_FOR_ID;
+	static String^ SITE_DOMAIN;
+	static String^ SITE_NAME;
+	static String^ USER_AGENT_STRING;
+	static String^ CHECKTAGS_STRING;
+	static String^ ACCESSPAGE_STRING;
+	static String^ POSTTAGS_STRING;
+	static String^ PAGENUMBER_XPATH;
+	static String^ POSTLINKS_XPATH;
+	static String^ IMAGECONTAINER_XPATH;
+	static String^ FILEPATH_JOINER;
+	static void DefineSite(){
+		SITE_DOMAIN = gcnew String("http://danbooru.donmai.us");
+		SITE_NAME = gcnew String("Danbooru");
+		START_PAGE_INDEX=1;
+		NUMBER_OF_THREADS=3;
+		SEGMENTDEPTH_FOR_ID=4;
+		USER_AGENT_STRING = gcnew String("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
+		CHECKTAGS_STRING = gcnew String("<img  class=\"preview    \"");
+		ACCESSPAGE_STRING = gcnew String("/post?page=");
+		POSTTAGS_STRING = gcnew String("&commit=Search&tags=");
+		PAGENUMBER_XPATH = gcnew String("//div[@class='pagination']/a");
+		POSTLINKS_XPATH = gcnew String("//span[@class='thumb blacklisted']/a");
+		IMAGECONTAINER_XPATH = gcnew String("//div[@class='content']/div/img[@id='image']");
+		FILEPATH_JOINER = gcnew String("");
+	};
 	static String^ GetRawHtml(String^ Url){
 		//Console::WriteLine("GetRawHtml Called with: "+Url);
 		String^ OutputHtml;
@@ -21,39 +70,32 @@ public:
 		}
 		catch (WebException^ e)
 		{
-			throw e;
+			Console::WriteLine("GetRawHtml failed because {0}",e);
+			return nullptr;
 		}
 		return OutputHtml;
-	}
-
-};
-ref class Danbooru_Containers
-{
-public:
-	value struct ReadDanbooruParameters //Defines a Struc with YandereDownloader::ReadYande_re parameters needance
-	{
-		int page; 
-		array<String^>^tags;
 	};
-	value struct ThreadGroup {
-		array<Thread^>^Threads;
-		//array<YandereDownloader^>^DownloaderReferences;
-		array<ReadDanbooruParameters>^Parameters;
+	static String^ ParseFilePath(String^ FilePath){
+		FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
+		try
+		{
+			FilePath=FilePath->Substring(0,140);
+		}
+		catch (System::ArgumentOutOfRangeException^ e)
+		{
+		}
+		return FilePath;
 	};
-	value struct PostData {
-		String^ Link;
-		String^ ID;
-		String^ Tags;
+	static String^ ParseFileExtension(String^ FileExtension){
+		FileExtension=FileExtension->Replace("jpeg","jpg");
+		FileExtension=FileExtension->Substring(FileExtension->Length-4,4);
+		return FileExtension;
 	};
-};
-ref class DanbooruDownloader //MainClass yandere downloader
-{
-public:
-	static String^ ReadDanbooru(int page, array<String^>^tags) //Function to get RAW html source code from site with 'page' and 'tags' as source
+	static String^ ReadDanbooru(int page) //Function to get RAW html source code from site with 'page' and 'tags' as source
 	{
 		String^ Page_Data;//RAW Html string initialization
-		String^ FinalUrl= gcnew String(SITE_DOMAIN+"/post?page=");//URL String initialization
-		FinalUrl += page.ToString() + "&commit=Search&tags=";//Add page and "&tags=" to URL
+		String^ FinalUrl= gcnew String(SITE_DOMAIN+ACCESSPAGE_STRING);//URL String initialization
+		FinalUrl += page.ToString() + POSTTAGS_STRING;//Add page and "&tags=" to URL
 		for each (String^ tag in tags)//Cycle to add each tag to URL
 		{
 			FinalUrl+=tag+"+";//each tags must be separated by '+' so each tag is added to URL after '+'
@@ -64,7 +106,7 @@ public:
 #endif
 		try
 		{
-			Page_Data=AditionalFunctions::GetRawHtml(FinalUrl);
+			Page_Data=GetRawHtml(FinalUrl);
 		}
 		catch (WebException^ e) //In case of Webexception the following code is run
 		{
@@ -80,13 +122,13 @@ public:
 		}
 		return Page_Data; //Returns RAW HTLM string
 	};
-	static int GetPagesNumber(array<String^>^tags) //Function to get the number of pages the tags have
+	static int GetPagesNumber() //Function to get the number of pages the tags have
 	{
-		String^ texto = DanbooruDownloader::ReadDanbooru(1,tags);//Put RAW HTML in the String Texto
+		String^ texto = DanbooruDownloader::ReadDanbooru(START_PAGE_INDEX);//Put RAW HTML in the String Texto
 		if (!(texto==nullptr)) //If the RAW HTML exist, do following code
 		{
 			String^ PageTemp; // Create string pointer to get inner text from Html Node
-			HtmlNodeCollection^ nodos_a = DanbooruDownloader::GetHtmlNodes(texto,"//div[@class='pagination']/a"); //Select 'a' nodes from 'div' with class='pagination'
+			HtmlNodeCollection^ nodos_a = DanbooruDownloader::GetHtmlNodes(texto,PAGENUMBER_XPATH); //Select 'a' nodes from 'div' with class='pagination'
 			try //Try to read nodes
 			{
 				nodos_a->RemoveAt(nodos_a->Count-1); //Remove an extra node that doesn't fullfill our needance
@@ -104,8 +146,8 @@ public:
 		return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
 	};
 	static void DownloadFiles(Object^ data){//function to Parse Html Tags and call download
-		Danbooru_Containers::ReadDanbooruParameters^ Parameteres =(Danbooru_Containers::ReadDanbooruParameters^)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
-		array<Danbooru_Containers::PostData^>^ Links=GetDownloadData(Parameteres->page,Parameteres->tags);
+		int Page =(int)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
+		array<Danbooru_Containers::PostData^>^ Links=GetDownloadData(Page);
 		int LinksCount = Links->Length;
 		Console::WriteLine("Downloading "+LinksCount+" files."); //Write the number of downloadable files
 		for (int i=0;i<LinksCount;i++)
@@ -118,25 +160,9 @@ public:
 			Uri^ Link=gcnew Uri(Links[i]->Link);
 			try
 			{
-				String^ FilePath = gcnew String("");
-				String^ FileExtension = gcnew String("");
-				FilePath=Links[i]->ID+" "+Links[i]->Tags;
-				FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
-				FileExtension=Links[i]->Link;
-				FileExtension=FileExtension->Replace("jpeg","jpg");
-				//FileExtension=FileExtension->Replace("?"+Links[i]->ID,"");
-				FileExtension=FileExtension->Substring(FileExtension->Length-4,4);
-				//FilePath=FilePath->Replace("yande.re%20","");
-				//FilePath=Uri::UnescapeDataString(FilePath);
-				//FilePath=Links[i]->Link->Substring(0,FilePath->Length-4);
-				try
-				{
-					FilePath=FilePath->Substring(0,140);
-				}
-				catch (System::ArgumentOutOfRangeException^ e)
-				{
-				}
-				FilePath=SITE_NAME+"/"+FilePath+FileExtension;
+				String^ FilePath = ParseFilePath(Links[i]->ID+" "+Links[i]->Tags);
+				String^ FileExtension = ParseFileExtension(Links[i]->Link);
+				FilePath=SITE_NAME+FILEPATH_JOINER+FilePath+FileExtension;
 				if (!(IO::File::Exists(FilePath)))
 				{
 					WebClient^ Host_Reader = gcnew WebClient;
@@ -175,28 +201,17 @@ public:
 		//Console::WriteLine(nodo_p->HasChildNodes);
 		return nodo_p->SelectNodes(Xpath); //Select all nodes with direct image link
 	};
-	static Danbooru_Containers::ThreadGroup^ SetThreads(array<String^>^tags){
+	static Danbooru_Containers::ThreadGroup^ SetThreads(){
 		Danbooru_Containers::ThreadGroup^ Threads=gcnew Danbooru_Containers::ThreadGroup;
 		Threads->Threads = gcnew array<Thread^>(NUMBER_OF_THREADS);
-		Threads->Parameters = gcnew array<Danbooru_Containers::ReadDanbooruParameters>(NUMBER_OF_THREADS);
-		for (int th=0;th<NUMBER_OF_THREADS;th++)
-		{
-			Threads->Parameters[th].tags=tags;
-		}
-#ifdef _DEBUG
-		for each (String^ var in Threads->Parameters[0].tags)
-		{
-			Console::WriteLine(var);
-		}
-#endif
-		//array<YandereDownloader^>^DownloaderReferences = gcnew array<YandereDownloader^>(0);
+		Threads->Pages = gcnew array<int>(NUMBER_OF_THREADS);
 		return Threads; //Select all nodes with direct image link
 	};
-	static array<Danbooru_Containers::PostData^>^ GetDownloadData(int page, array<String^>^tags) //Function to get Download Links from site with 'page' and 'tags' as source
+	static array<Danbooru_Containers::PostData^>^ GetDownloadData(int page) //Function to get Download Links from site with 'page' and 'tags' as source
 	{
-		String^ RawHtml = ReadDanbooru(page,tags);
+		String^ RawHtml = ReadDanbooru(page);
 		//Console::WriteLine(RawHtml);
-		HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,"//span[@class='thumb blacklisted']/a");
+		HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,POSTLINKS_XPATH);
 #ifdef _DEBUG
 		Console::WriteLine("Total nodes in GetDownloadLink are: "+HtmlNodes->Count);
 #endif // DEBUGGING
@@ -204,7 +219,7 @@ public:
 		int nodecount=0;
 		for each (HtmlNode^ a_refs in HtmlNodes)
 		{
-			Danbooru_Containers::PostData^ a_r_data =GetPostData(SITE_DOMAIN+"/"+a_refs->GetAttributeValue("href",""));
+			Danbooru_Containers::PostData^ a_r_data =GetPostData(SITE_DOMAIN+FILEPATH_JOINER+a_refs->GetAttributeValue("href",""));
 			if (a_r_data!=nullptr){
 				LinkData[nodecount]=a_r_data;
 			}else
@@ -222,10 +237,14 @@ public:
 	static Danbooru_Containers::PostData^ GetPostData(String^ PostUrl) //Function to get Download Link from page url
 	{
 		Uri^ Link=gcnew Uri(PostUrl);
-		String^ RawHtml = AditionalFunctions::GetRawHtml(PostUrl);
+		String^ RawHtml = GetRawHtml(PostUrl);
+		if (RawHtml==nullptr)
+		{
+			return nullptr;
+		}
 		Danbooru_Containers::PostData^ PostData = gcnew Danbooru_Containers::PostData;
 		//Console::WriteLine(RawHtml);
-		HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,"//div[@class='content']/div/img[@id='image']");
+		HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,IMAGECONTAINER_XPATH);
 		//Console::WriteLine("Total nodes in GetPostDirectLink are: "+HtmlNodes->Count);
 		if (HtmlNodes!=nullptr)
 		{
@@ -235,10 +254,10 @@ public:
 				PostData->Tags=img->GetAttributeValue("alt","false");
 #ifdef _DEBUG
 				Console::WriteLine("Direct link of post "+PostUrl+" is "+PostData->Link);
-				Console::WriteLine("Tags of post "+PostUrl+" is "+PostData->Tags);
+				Console::WriteLine("Tags of post "+PostUrl+" are "+PostData->Tags);
 #endif // DEBUGGING
 			}
-			PostData->ID=Link->Segments[3];
+			PostData->ID=Link->Segments[SEGMENTDEPTH_FOR_ID];
 #ifdef _DEBUG
 			Console::WriteLine("ID of post "+PostUrl+" is "+PostData->ID);
 #endif // DEBUGGING
@@ -246,71 +265,61 @@ public:
 		}
 		return nullptr;
 	};
-};
-
-
-
-
-
-int _tmain(int argc, _TCHAR* argv[])
-{
-	Console::BackgroundColor=ConsoleColor::White;
-	Console::ForegroundColor=ConsoleColor::Black;
-	Console::Title=SITE_NAME+" Batch image downloader";
-	array<String^>^args = Environment::GetCommandLineArgs();
-	bool CheckTags=0;
-	if ( args == nullptr || args->Length == 1 )
-	{
-		Console::BackgroundColor=ConsoleColor::Red;
-		Console::WriteLine("Specify the tags to crawl");
-		Console::WriteLine("Usage: "+SITE_NAME+" moe suzumiya_haruhi");
-		Console::WriteLine("To download pictures with tags moe and suzumiya_haruhi");
-		Console::WriteLine("Remember "+SITE_NAME+" threats spaces as underline score");
-		return 1;
-	}else
-	{
-		Array::Reverse(args);
-		Array::Resize(args,args->Length -1);
-		CheckTags=DanbooruDownloader::ReadDanbooru(1,args)->Contains("<img  class=\"preview    \"");
-#ifdef _DEBUG
-		Console::WriteLine("Checking tags.... Returned "+CheckTags);
-#endif // DEBUGGING
-		if (CheckTags)
+	
+public:
+	static void StartDownloader(array<String^>^ args){
+		bool CheckTags=0;
+		if ( args == nullptr || args->Length == 1 )
 		{
-			int TotalPages =DanbooruDownloader::GetPagesNumber(args);
+			Console::BackgroundColor=ConsoleColor::Red;
+			Console::WriteLine("Specify the tags to crawl");
+			Console::WriteLine("Usage: Danbooru -[siteid] moe suzumiya_haruhi");
+			Console::WriteLine("To download pictures with tags moe and suzumiya_haruhi");
+			Console::WriteLine("Remember Danbooru sites threats spaces as underline score");
+		}else
+		{
+			DefineSite();
+			Array::Reverse(args);
+			Array::Resize(args,args->Length -1);
+			tags=args;
+			CheckTags=DanbooruDownloader::ReadDanbooru(START_PAGE_INDEX)->Contains(CHECKTAGS_STRING);
 #ifdef _DEBUG
-			Console::WriteLine("Total number of pages is "+TotalPages);
+			Console::WriteLine("Checking tags.... Returned "+CheckTags);
 #endif // DEBUGGING
-			int ThreadGroups = TotalPages/NUMBER_OF_THREADS;
-			int ThreadRemainder = TotalPages % NUMBER_OF_THREADS;
-			int ActualPage = 0;
-			int ActualThread = 0;
-			Danbooru_Containers::ThreadGroup^ Threads=DanbooruDownloader::SetThreads(args);
-			for (int tg=0;tg<ThreadGroups;tg++){
-				for (int th = 0; th < NUMBER_OF_THREADS; th++)
-				{
-					ActualThread=th;
-					ActualPage=tg*NUMBER_OF_THREADS+th+1;
-					THREADING_MACRO
+			if (CheckTags)
+			{
+				int TotalPages =GetPagesNumber();
+				Console::WriteLine("Will download "+TotalPages+" pages.");
+				int ThreadGroups = TotalPages/NUMBER_OF_THREADS;
+				int ThreadRemainder = TotalPages % NUMBER_OF_THREADS;
+				int ActualPage = 0;
+				int ActualThread = 0;
+				Danbooru_Containers::ThreadGroup^ Threads=SetThreads();
+				for (int tg=0;tg<ThreadGroups;tg++){
+					for (int th = 0; th < NUMBER_OF_THREADS; th++)
+					{
+						ActualThread=th;
+						ActualPage=tg*NUMBER_OF_THREADS+th+1;
+						THREADING_MACRO
 #ifdef _DEBUG
-					THREADING_MACRO_DEBUGGING
+						THREADING_MACRO_DEBUGGING
 #endif // DEBUGGING
+					}
+#ifdef _DEBUG
+					if (ThreadRemainder==0)
+					{
+						Console::WriteLine("All Threads Started");
+					}
+#endif // DEBUGGING
+					for (int tw=0;tw<NUMBER_OF_THREADS;tw++)
+					{
+						ActualThread=tw;
+						THREADING_MACRO_JOINER
+#ifdef _DEBUG
+							THREADING_MACRO_JOINER_DEBUGGING
+#endif // DEBUGGING
+					}
 				}
-#ifdef _DEBUG
-				if (ThreadRemainder==0)
-				{
-					Console::WriteLine("All Threads Started");
-				}
-#endif // DEBUGGING
-				for (int tw=0;tw<NUMBER_OF_THREADS;tw++)
-				{
-					ActualThread=tw;
-					THREADING_MACRO_JOINER
-#ifdef _DEBUG
-					THREADING_MACRO_JOINER_DEBUGGING
-#endif // DEBUGGING
-				}
-			}
 				if (ThreadRemainder>0){
 					for (int tr=0;tr<ThreadRemainder;tr++)
 					{
@@ -318,7 +327,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						ActualPage =ThreadGroups*NUMBER_OF_THREADS+tr+1;
 						THREADING_MACRO
 #ifdef _DEBUG
-						THREADING_MACRO_DEBUGGING
+							THREADING_MACRO_DEBUGGING
 #endif // DEBUGGING
 					}
 #ifdef _DEBUG
@@ -329,23 +338,32 @@ int _tmain(int argc, _TCHAR* argv[])
 						ActualThread=trj;
 						THREADING_MACRO_JOINER
 #ifdef _DEBUG
-						THREADING_MACRO_JOINER_DEBUGGING
+							THREADING_MACRO_JOINER_DEBUGGING
 #endif // DEBUGGING
 					}
 				}
 
 #ifdef _DEBUG
-			Console::WriteLine("All Threads terminated");
+				Console::WriteLine("All Threads terminated");
 #endif // DEBUGGING
-		} 
-		else
-		{
-			Console::WriteLine("Nothing here but us Chickens!");
+			} 
+			else
+			{
+				Console::WriteLine("Nothing here but us Chickens!");
+			}
+
+			Console::ResetColor();
 		}
-		
-		Console::ResetColor();
-		return 0;
-	}
+	};
+};
+
+int _tmain(int argc, _TCHAR* argv[])
+{
+	/*Console::BackgroundColor=ConsoleColor::White;
+	Console::ForegroundColor=ConsoleColor::Black;*/
+	Console::Title=" Batch image downloader";
+	array<String^>^args = Environment::GetCommandLineArgs();
+	DanbooruDownloader::StartDownloader(args);
 #ifdef _DEBUG
 	Console::ReadKey();
 #endif // _DEBUG

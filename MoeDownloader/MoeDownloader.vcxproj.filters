@@ -32,7 +32,7 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MoeDownloader.cpp">
+    <ClCompile Include="yandere.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
