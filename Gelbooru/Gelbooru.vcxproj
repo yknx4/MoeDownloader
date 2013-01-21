@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0DE5D1B1-D22D-432F-B306-B32805DA0338}</ProjectGuid>
+    <ProjectGuid>{3606EE6D-405D-4F68-8B3C-A196F81B148C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Gelbooru</RootNamespace>
   </PropertyGroup>
@@ -119,6 +119,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,6 +137,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,8 +164,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="HtmlAgilityPack">
-      <HintPath>D:\Source Codes\Personal\moe downloader\Html Agility pack\Net40\HtmlAgilityPack.dll</HintPath>
+    <Reference Include="GelbooruSitesLibrary">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\$(Platform)\$(Configuration)\GelbooruLibrary.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

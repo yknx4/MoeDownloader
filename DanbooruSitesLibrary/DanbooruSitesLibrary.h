@@ -1,5 +1,5 @@
 // DanbooruSitesLibrary.h
-
+//#define Gelbooru
 #pragma once
 #include "Threading.h"
 
@@ -75,7 +75,7 @@ private:
 		ACCESSPAGE_STRING = SiteData->ACCESSPAGE_STRING;
 		POSTTAGS_STRING = SiteData->POSTTAGS_STRING;
 		PAGENUMBER_XPATH = SiteData->PAGENUMBER_XPATH;
-		POSTLINKS_XPATH = SiteData->PAGENUMBER_XPATH;
+		POSTLINKS_XPATH = SiteData->POSTLINKS_XPATH;
 		IMAGECONTAINER_XPATH = SiteData->IMAGECONTAINER_XPATH;
 		FILEPATH_JOINER = SiteData->FILEPATH_JOINER;
 		DelayInConnections=SiteData->DelayInConnections;
@@ -97,27 +97,32 @@ private:
 		}
 		return OutputHtml;
 	};
-	static String^ ParseFilePath(String^ FilePath){
-		FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
+	static String^ GetRawHtml(Uri^ Url){
+		//Console::WriteLine("GetRawHtml Called with: "+Url);
+		String^ OutputHtml;
 		try
 		{
-			FilePath=FilePath->Substring(0,140);
+			WebClient^ Host_Reader = gcnew WebClient; //Initialize the Webclient needed to parse HTML
+			Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING); //Add user agent header
+			OutputHtml=Host_Reader->DownloadString(Url);	//Download Source Code and put it in PageData String
+			//Console::WriteLine(OutputHtml);
 		}
-		catch (System::ArgumentOutOfRangeException^ e)
+		catch (WebException^ e)
 		{
+			throw e;
 		}
-		return FilePath;
-	};
-	static String^ ParseFileExtension(String^ FileExtension){
-		FileExtension=FileExtension->Replace("jpeg","jpg");
-		FileExtension=FileExtension->Substring(FileExtension->Length-4,4);
-		return FileExtension;
+		return OutputHtml;
 	};
 	static String^ ReadDanbooru(int page) //Function to get RAW html source code from site with 'page' and 'tags' as source
 	{
 		String^ Page_Data;//RAW Html string initialization
 		String^ FinalUrl= gcnew String(SITE_DOMAIN+ACCESSPAGE_STRING);//URL String initialization
+#ifndef Gelbooru
 		FinalUrl += page.ToString() + POSTTAGS_STRING;//Add page and "&tags=" to URL
+#endif
+#ifdef Gelbooru
+		FinalUrl += (page*PID_MULT).ToString() + POSTTAGS_STRING;//Add page and "&tags=" to URL
+#endif
 		for each (String^ tag in tags)//Cycle to add each tag to URL
 		{
 			FinalUrl+=tag+"+";//each tags must be separated by '+' so each tag is added to URL after '+'
@@ -145,29 +150,6 @@ private:
 		}
 		return Page_Data; //Returns RAW HTLM string
 	};
-	static int GetPagesNumber() //Function to get the number of pages the tags have
-	{
-		String^ texto = DanbooruDownloader::ReadDanbooru(START_PAGE_INDEX);//Put RAW HTML in the String Texto
-		if (!(texto==nullptr)) //If the RAW HTML exist, do following code
-		{
-			String^ PageTemp; // Create string pointer to get inner text from Html Node
-			HtmlNodeCollection^ nodos_a = DanbooruDownloader::GetHtmlNodes(texto,PAGENUMBER_XPATH); //Select 'a' nodes from 'div' with class='pagination'
-			try //Try to read nodes
-			{
-				nodos_a->RemoveAt(nodos_a->Count-1); //Remove an extra node that doesn't fullfill our needance
-				for each (HtmlNode^ var in nodos_a) // Cycle for each node
-				{
-					PageTemp=var->InnerText; //Put the data in PageTemp variable
-				}
-				return Convert::ToInt32(PageTemp,10); //Return the last PageTemp, and so the biggest number, meanning the last page
-			}
-			catch (NullReferenceException^ e) //If no div availavable, means it just have 1 page
-			{
-				return 1;	//return 1 page
-			}
-		}
-		return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
-	};
 	static void DownloadFiles(Object^ data){//function to Parse Html Tags and call download
 		int Page =(int)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
 		array<Danbooru_Containers::PostData^>^ Links=GetDownloadData(Page);
@@ -184,7 +166,12 @@ private:
 			try
 			{
 				String^ FilePath = ParseFilePath(Links[i]->ID+" "+Links[i]->Tags);
+#ifndef Gelbooru
 				String^ FileExtension = ParseFileExtension(Links[i]->Link);
+#endif
+#ifdef Gelbooru
+				String^ FileExtension = ParseFileExtension(Links[i]->Link,Convert::ToInt32(Links[i]->ID));
+#endif
 				FilePath=SITE_NAME+FILEPATH_JOINER+FilePath+FileExtension;
 				if (!(IO::File::Exists(FilePath)))
 				{
@@ -235,6 +222,7 @@ private:
 		String^ RawHtml = ReadDanbooru(page);
 		//Console::WriteLine(RawHtml);
 		HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,POSTLINKS_XPATH);
+		Console::WriteLine("GetHtmlNodes called with Xpath "+POSTLINKS_XPATH);
 #ifdef _DEBUG
 		Console::WriteLine("Total nodes in GetDownloadLink are: "+HtmlNodes->Count);
 #endif // DEBUGGING
@@ -258,6 +246,18 @@ private:
 #endif // DEBUGGING
 		return LinkData;
 	};
+	static String^ ParseFilePath(String^ FilePath){
+		FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
+		try
+		{
+			FilePath=FilePath->Substring(0,140);
+		}
+		catch (System::ArgumentOutOfRangeException^ e)
+		{
+		}
+		return FilePath;
+	};
+#ifndef Gelbooru
 	static Danbooru_Containers::PostData^ GetPostData(String^ PostUrl) //Function to get Download Link from page url
 	{
 		Uri^ Link=gcnew Uri(PostUrl);
@@ -289,7 +289,41 @@ private:
 		}
 		return nullptr;
 	};
-	
+	static String^ ParseFileExtension(String^ FileExtension){
+		FileExtension=FileExtension->Replace("jpeg","jpg");
+		FileExtension=FileExtension->Substring(FileExtension->Length-4,4);
+		return FileExtension;
+	};
+	static int GetPagesNumber() //Function to get the number of pages the tags have
+	{
+		String^ texto = DanbooruDownloader::ReadDanbooru(START_PAGE_INDEX);//Put RAW HTML in the String Texto
+		if (!(texto==nullptr)) //If the RAW HTML exist, do following code
+		{
+			String^ PageTemp; // Create string pointer to get inner text from Html Node
+			HtmlNodeCollection^ nodos_a = DanbooruDownloader::GetHtmlNodes(texto,PAGENUMBER_XPATH); //Select 'a' nodes from 'div' with class='pagination'
+			try //Try to read nodes
+			{
+				nodos_a->RemoveAt(nodos_a->Count-1); //Remove an extra node that doesn't fullfill our needance
+				for each (HtmlNode^ var in nodos_a) // Cycle for each node
+				{
+					PageTemp=var->InnerText; //Put the data in PageTemp variable
+				}
+				return Convert::ToInt32(PageTemp,10); //Return the last PageTemp, and so the biggest number, meanning the last page
+			}
+			catch (NullReferenceException^ e) //If no div availavable, means it just have 1 page
+			{
+				return 1;	//return 1 page
+			}
+		}
+		return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
+	};
+#endif // !Gelbooru
+#ifdef Gelbooru
+	static Danbooru_Containers::PostData^ GetPostData(String^ PostUrl);
+	static String^ ParseFileExtension(String^ FileExtension,int ID);
+	static int GetPagesNumber();
+#endif // Gelbooru
+
 public:
 	static void StartDownloader(array<String^>^ args,Danbooru_Containers::SiteData^ SiteData){
 		bool CheckTags=0;
@@ -323,7 +357,12 @@ public:
 					for (int th = 0; th < NUMBER_OF_THREADS; th++)
 					{
 						ActualThread=th;
+#ifndef Gelbooru
 						ActualPage=tg*NUMBER_OF_THREADS+th+1;
+#endif
+#ifdef Gelbooru
+						ActualPage=tg*NUMBER_OF_THREADS+th;
+#endif
 						THREADING_MACRO
 #ifdef _DEBUG
 						THREADING_MACRO_DEBUGGING
@@ -348,7 +387,12 @@ public:
 					for (int tr=0;tr<ThreadRemainder;tr++)
 					{
 						ActualThread=tr;
+#ifndef Gelbooru
 						ActualPage =ThreadGroups*NUMBER_OF_THREADS+tr+1;
+#endif
+#ifdef Gelbooru
+						ActualPage =ThreadGroups*NUMBER_OF_THREADS+tr;
+#endif
 						THREADING_MACRO
 #ifdef _DEBUG
 							THREADING_MACRO_DEBUGGING
@@ -380,4 +424,79 @@ public:
 		}
 	};
 };
+
+#ifdef Gelbooru
+Danbooru_Containers::PostData^ DanbooruDownloader::GetPostData(String^ PostUrl) //Function to get Download Link from page url
+{
+	PostUrl=Uri::UnescapeDataString(PostUrl);
+	PostUrl=PostUrl->Replace("&amp;","&");
+#ifdef _DEBUG
+	System::Console::WriteLine("GetPostData function called with: "+PostUrl);
+#endif
+	Uri^ Link=gcnew Uri(PostUrl);
+	String^ RawHtml = GetRawHtml(Link);
+	if (RawHtml==nullptr)
+	{
+		return nullptr;
+	}
+	Danbooru_Containers::PostData^ PostData = gcnew Danbooru_Containers::PostData;
+	//Console::WriteLine(RawHtml);
+	HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,IMAGECONTAINER_XPATH);
+	//Console::WriteLine("Total nodes in GetPostDirectLink are: "+HtmlNodes->Count);
+	if (HtmlNodes!=nullptr)
+	{
+		for each (HtmlNode^ img in HtmlNodes)
+		{
+			PostData->Link=img->GetAttributeValue("src","false");
+			PostData->Tags=img->GetAttributeValue("alt","false");
+#ifdef _DEBUG
+			Console::WriteLine("Direct link of post "+PostUrl+" is "+PostData->Link);
+			Console::WriteLine("Tags of post "+PostUrl+" are "+PostData->Tags);
+#endif // DEBUGGING
+		}
+		PostData->ID=PostUrl->Substring((PostUrl->IndexOf("id=")+3));
+#ifdef _DEBUG
+		Console::WriteLine("ID of post "+PostUrl+" is "+PostData->ID);
+#endif // DEBUGGING
+		return PostData;
+	}
+	return nullptr;
+};
+String^ DanbooruDownloader::ParseFileExtension(String^ FileExtension,int ID){
+	FileExtension=FileExtension->Replace("jpeg","jpg");
+	FileExtension=FileExtension->Replace("?"+ID,"");
+	FileExtension=FileExtension->Substring(FileExtension->Length-4,4);
+	return FileExtension;
+};
+int DanbooruDownloader::GetPagesNumber() //Function to get the number of pages the tags have
+{
+	String^ texto = DanbooruDownloader::ReadDanbooru(START_PAGE_INDEX);//Put RAW HTML in the String Texto
+	if (!(texto==nullptr)) //If the RAW HTML exist, do following code
+	{
+		String^ PageTemp; // Create string pointer to get inner text from Html Node
+		HtmlNodeCollection^ nodos_a = DanbooruDownloader::GetHtmlNodes(texto,PAGENUMBER_XPATH); //Select 'a' nodes from 'div' with class='pagination'
+		try //Try to read nodes
+		{
+			for each (HtmlNode^ var in nodos_a) // Cycle for each node
+				{
+					PageTemp=var->GetAttributeValue("href","false"); //Put the data in PageTemp variable
+					//Console::WriteLine(PageTemp);
+					PageTemp=PageTemp->Substring((PageTemp->IndexOf("pid=")+4));
+					//Console::WriteLine(PageTemp);
+				}
+				return ((Convert::ToInt32(PageTemp,10)/PID_MULT)+1);
+		}
+		catch (NullReferenceException^ e) //If no div availavable, means it just have 1 page
+		{
+			return 1;	//return 1 page
+		}
+	}
+	return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
+};
+#endif // Gelbooru
+
+
+
+
+
 }
