@@ -28,6 +28,22 @@ public:
 		String^ ID;
 		String^ Tags;
 	};
+	value struct SiteData {
+		static int START_PAGE_INDEX;
+		static int NUMBER_OF_THREADS;
+		static int SEGMENTDEPTH_FOR_ID;
+		static String^ SITE_DOMAIN;
+		static String^ SITE_NAME;
+		static String^ USER_AGENT_STRING;
+		static String^ CHECKTAGS_STRING;
+		static String^ ACCESSPAGE_STRING;
+		static String^ POSTTAGS_STRING;
+		static String^ PAGENUMBER_XPATH;
+		static String^ POSTLINKS_XPATH;
+		static String^ IMAGECONTAINER_XPATH;
+		static String^ FILEPATH_JOINER;
+		static bool DelayInConnections;
+	};
 };
 	public ref class DanbooruDownloader //MainClass yandere downloader
 {
@@ -47,20 +63,22 @@ private:
 	static String^ POSTLINKS_XPATH;
 	static String^ IMAGECONTAINER_XPATH;
 	static String^ FILEPATH_JOINER;
-	static void DefineSite(){
-		SITE_DOMAIN = gcnew String("http://danbooru.donmai.us");
-		SITE_NAME = gcnew String("Danbooru");
-		START_PAGE_INDEX=1;
-		NUMBER_OF_THREADS=3;
-		SEGMENTDEPTH_FOR_ID=4;
-		USER_AGENT_STRING = gcnew String("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-		CHECKTAGS_STRING = gcnew String("<img  class=\"preview    \"");
-		ACCESSPAGE_STRING = gcnew String("/post?page=");
-		POSTTAGS_STRING = gcnew String("&commit=Search&tags=");
-		PAGENUMBER_XPATH = gcnew String("//div[@class='pagination']/a");
-		POSTLINKS_XPATH = gcnew String("//span[@class='thumb blacklisted']/a");
-		IMAGECONTAINER_XPATH = gcnew String("//div[@class='content']/div/img[@id='image']");
-		FILEPATH_JOINER = gcnew String("");
+	static bool DelayInConnections;
+	static void DefineSite(Danbooru_Containers::SiteData^ SiteData){
+		SITE_DOMAIN = SiteData->SITE_DOMAIN;
+		SITE_NAME = SiteData->SITE_NAME;
+		START_PAGE_INDEX=SiteData->START_PAGE_INDEX;
+		NUMBER_OF_THREADS=SiteData->NUMBER_OF_THREADS;
+		SEGMENTDEPTH_FOR_ID=SiteData->SEGMENTDEPTH_FOR_ID;
+		USER_AGENT_STRING = SiteData->USER_AGENT_STRING;
+		CHECKTAGS_STRING = SiteData->CHECKTAGS_STRING;
+		ACCESSPAGE_STRING = SiteData->ACCESSPAGE_STRING;
+		POSTTAGS_STRING = SiteData->POSTTAGS_STRING;
+		PAGENUMBER_XPATH = SiteData->PAGENUMBER_XPATH;
+		POSTLINKS_XPATH = SiteData->PAGENUMBER_XPATH;
+		IMAGECONTAINER_XPATH = SiteData->IMAGECONTAINER_XPATH;
+		FILEPATH_JOINER = SiteData->FILEPATH_JOINER;
+		DelayInConnections=SiteData->DelayInConnections;
 	};
 	static String^ GetRawHtml(String^ Url){
 		//Console::WriteLine("GetRawHtml Called with: "+Url);
@@ -122,6 +140,7 @@ private:
 #ifndef _DEBUG
 			Console::WriteLine("Cannot connect to Host");
 			Console::WriteLine("Is Internet connection alive?");
+			Console::WriteLine("Error: {0}",e);
 #endif
 		}
 		return Page_Data; //Returns RAW HTLM string
@@ -223,6 +242,7 @@ private:
 		int nodecount=0;
 		for each (HtmlNode^ a_refs in HtmlNodes)
 		{
+			if (DelayInConnections)Thread::Sleep(2000);
 			Danbooru_Containers::PostData^ a_r_data =GetPostData(SITE_DOMAIN+FILEPATH_JOINER+a_refs->GetAttributeValue("href",""));
 			if (a_r_data!=nullptr){
 				LinkData[nodecount]=a_r_data;
@@ -271,18 +291,18 @@ private:
 	};
 	
 public:
-	static void StartDownloader(array<String^>^ args){
+	static void StartDownloader(array<String^>^ args,Danbooru_Containers::SiteData^ SiteData){
 		bool CheckTags=0;
 		if ( args == nullptr || args->Length == 1 )
 		{
-			Console::BackgroundColor=ConsoleColor::Red;
+			Console::ForegroundColor=ConsoleColor::Red;
 			Console::WriteLine("Specify the tags to crawl");
-			Console::WriteLine("Usage: Danbooru -[siteid] moe suzumiya_haruhi");
+			Console::WriteLine("Usage: "+SiteData->SITE_NAME+" moe suzumiya_haruhi");
 			Console::WriteLine("To download pictures with tags moe and suzumiya_haruhi");
-			Console::WriteLine("Remember Danbooru sites threats spaces as underline score");
+			Console::WriteLine("Remember Danbooru-like sites threats spaces as underline score");
 		}else
 		{
-			DefineSite();
+			DefineSite(SiteData);
 			Array::Reverse(args);
 			Array::Resize(args,args->Length -1);
 			tags=args;

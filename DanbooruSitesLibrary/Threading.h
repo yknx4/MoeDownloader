@@ -1,7 +1,8 @@
 #define THREADING_MACRO Threads->Pages[ActualThread]=ActualPage; \
 ParameterizedThreadStart^ ThreadDelegate = gcnew ParameterizedThreadStart( &DownloadFiles) ; \
 Threads->Threads[ActualThread]=gcnew Thread(ThreadDelegate); \
-Threads->Threads[ActualThread]->Start(Threads->Pages[ActualThread]);
+Threads->Threads[ActualThread]->Start(Threads->Pages[ActualThread]);\
+Console::WriteLine("Downloading page "+ActualPage+" of "+TotalPages);
 
 #define THREADING_MACRO_DEBUGGING String^ Debug = gcnew String(""); \
 Debug="Thread "+(ActualThread+1)+" Started"; \

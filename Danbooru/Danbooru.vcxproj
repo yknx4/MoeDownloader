@@ -119,6 +119,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,6 +137,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,8 +164,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="HtmlAgilityPack">
-      <HintPath>D:\Source Codes\Personal\moe downloader\Html Agility pack\Net40\HtmlAgilityPack.dll</HintPath>
+    <Reference Include="DanbooruSitesLibrary">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\$(Platform)\$(Configuration)\DanbooruSitesLibrary.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
