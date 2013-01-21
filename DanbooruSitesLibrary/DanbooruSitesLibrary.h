@@ -150,6 +150,49 @@ private:
 		}
 		return Page_Data; //Returns RAW HTLM string
 	};
+	static HtmlNodeCollection^ GetHtmlNodes(String^ RawHtml,String^ Xpath){
+		HtmlDocument doc; //initialize HTML Documents
+		doc.LoadHtml(RawHtml);//load Html from RAW Html string
+		HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
+		//Console::WriteLine(nodo_p->HasChildNodes);
+		return nodo_p->SelectNodes(Xpath); //Select all nodes with direct image link
+	};
+	static Danbooru_Containers::ThreadGroup^ SetThreads(){
+		Danbooru_Containers::ThreadGroup^ Threads=gcnew Danbooru_Containers::ThreadGroup;
+		Threads->Threads = gcnew array<Thread^>(NUMBER_OF_THREADS);
+		Threads->Pages = gcnew array<int>(NUMBER_OF_THREADS);
+		return Threads; //Select all nodes with direct image link
+	};
+#ifndef Moebooru
+	static array<Danbooru_Containers::PostData^>^ GetDownloadData(int page) //Function to get Download Links from site with 'page' and 'tags' as source
+	{
+		String^ RawHtml = ReadDanbooru(page);
+		//Console::WriteLine(RawHtml);
+		HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,POSTLINKS_XPATH);
+		Console::WriteLine("GetHtmlNodes called with Xpath "+POSTLINKS_XPATH);
+#ifdef _DEBUG
+		Console::WriteLine("Total nodes in GetDownloadLink are: "+HtmlNodes->Count);
+#endif // DEBUGGING
+		array<Danbooru_Containers::PostData^>^ LinkData = gcnew array<Danbooru_Containers::PostData^>(HtmlNodes->Count);
+		int nodecount=0;
+		for each (HtmlNode^ a_refs in HtmlNodes)
+		{
+			if (DelayInConnections)Thread::Sleep(2000);
+			Danbooru_Containers::PostData^ a_r_data =GetPostData(SITE_DOMAIN+FILEPATH_JOINER+a_refs->GetAttributeValue("href",""));
+			if (a_r_data!=nullptr){
+				LinkData[nodecount]=a_r_data;
+			}else
+			{
+				LinkData[nodecount]=nullptr;
+			}
+			//Console::WriteLine(Links[nodecount]);
+			nodecount++;
+		}
+#ifdef _DEBUG
+		Console::WriteLine("The total nodes processed are "+nodecount);
+#endif // DEBUGGING
+		return LinkData;
+	};
 	static void DownloadFiles(Object^ data){//function to Parse Html Tags and call download
 		int Page =(int)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
 		array<Danbooru_Containers::PostData^>^ Links=GetDownloadData(Page);
@@ -204,48 +247,6 @@ private:
 		}
 		Thread::Yield();
 	};
-	static HtmlNodeCollection^ GetHtmlNodes(String^ RawHtml,String^ Xpath){
-		HtmlDocument doc; //initialize HTML Documents
-		doc.LoadHtml(RawHtml);//load Html from RAW Html string
-		HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
-		//Console::WriteLine(nodo_p->HasChildNodes);
-		return nodo_p->SelectNodes(Xpath); //Select all nodes with direct image link
-	};
-	static Danbooru_Containers::ThreadGroup^ SetThreads(){
-		Danbooru_Containers::ThreadGroup^ Threads=gcnew Danbooru_Containers::ThreadGroup;
-		Threads->Threads = gcnew array<Thread^>(NUMBER_OF_THREADS);
-		Threads->Pages = gcnew array<int>(NUMBER_OF_THREADS);
-		return Threads; //Select all nodes with direct image link
-	};
-	static array<Danbooru_Containers::PostData^>^ GetDownloadData(int page) //Function to get Download Links from site with 'page' and 'tags' as source
-	{
-		String^ RawHtml = ReadDanbooru(page);
-		//Console::WriteLine(RawHtml);
-		HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,POSTLINKS_XPATH);
-		Console::WriteLine("GetHtmlNodes called with Xpath "+POSTLINKS_XPATH);
-#ifdef _DEBUG
-		Console::WriteLine("Total nodes in GetDownloadLink are: "+HtmlNodes->Count);
-#endif // DEBUGGING
-		array<Danbooru_Containers::PostData^>^ LinkData = gcnew array<Danbooru_Containers::PostData^>(HtmlNodes->Count);
-		int nodecount=0;
-		for each (HtmlNode^ a_refs in HtmlNodes)
-		{
-			if (DelayInConnections)Thread::Sleep(2000);
-			Danbooru_Containers::PostData^ a_r_data =GetPostData(SITE_DOMAIN+FILEPATH_JOINER+a_refs->GetAttributeValue("href",""));
-			if (a_r_data!=nullptr){
-				LinkData[nodecount]=a_r_data;
-			}else
-			{
-				LinkData[nodecount]=nullptr;
-			}
-			//Console::WriteLine(Links[nodecount]);
-			nodecount++;
-		}
-#ifdef _DEBUG
-		Console::WriteLine("The total nodes processed are "+nodecount);
-#endif // DEBUGGING
-		return LinkData;
-	};
 	static String^ ParseFilePath(String^ FilePath){
 		FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
 		try
@@ -257,7 +258,9 @@ private:
 		}
 		return FilePath;
 	};
+#endif
 #ifndef Gelbooru
+# ifndef Moebooru
 	static Danbooru_Containers::PostData^ GetPostData(String^ PostUrl) //Function to get Download Link from page url
 	{
 		Uri^ Link=gcnew Uri(PostUrl);
@@ -289,6 +292,7 @@ private:
 		}
 		return nullptr;
 	};
+# endif
 	static String^ ParseFileExtension(String^ FileExtension){
 		FileExtension=FileExtension->Replace("jpeg","jpg");
 		FileExtension=FileExtension->Substring(FileExtension->Length-4,4);
@@ -318,6 +322,10 @@ private:
 		return 1;//in any case return 1 page, to avoid program crash, further errors are handled after
 	};
 #endif // !Gelbooru
+#ifdef Moebooru
+	static void DownloadFiles(Object^ data);
+	static String^ ParseFilePath(String^ FilePath);
+#endif // Moebooru
 #ifdef Gelbooru
 	static Danbooru_Containers::PostData^ GetPostData(String^ PostUrl);
 	static String^ ParseFileExtension(String^ FileExtension,int ID);
@@ -340,7 +348,12 @@ public:
 			Array::Reverse(args);
 			Array::Resize(args,args->Length -1);
 			tags=args;
-			CheckTags=DanbooruDownloader::ReadDanbooru(START_PAGE_INDEX)->Contains(CHECKTAGS_STRING);
+#ifndef Moebooru
+			CheckTags=ReadDanbooru(START_PAGE_INDEX)->Contains(CHECKTAGS_STRING);
+#endif
+#ifdef Moebooru
+			CheckTags=Moebooru_tag_evaluation;
+#endif
 #ifdef _DEBUG
 			Console::WriteLine("Checking tags.... Returned "+CheckTags);
 #endif // DEBUGGING
@@ -424,7 +437,74 @@ public:
 		}
 	};
 };
+#ifdef Moebooru
+String^ DanbooruDownloader::ParseFilePath(String^ FilePath){
+	FilePath=FilePath->Replace(SITE_NAME+"%20","");
+	FilePath=Uri::UnescapeDataString(FilePath);
+	FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
+	try
+	{
+		FilePath=FilePath->Substring(0,140);
+	}
+	catch (System::ArgumentOutOfRangeException^ e)
+	{
+	}
+	return FilePath;
+};
+void DanbooruDownloader::DownloadFiles(Object^ data){//function to Parse Html Tags and call download
+	int Page =(int)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
+	String^ HtmlContent=ReadDanbooru(Page); //Get Raw HTML with needed parameters
+	String^ TempUrl; //Initialize string to store URL
+	HtmlNodeCollection^ nodos_a = GetHtmlNodes(HtmlContent,"//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']");; //Select all nodes with direct image link
+	Console::WriteLine("Downloading "+nodos_a->Count+" files."); //Write the number of downloadable files
+	for each (HtmlNode^ var in nodos_a)
+	{
+		if (var==nullptr)
+		{
+			continue;
+		}
+		//Console::WriteLine(Links[i]);
+		TempUrl=var->GetAttributeValue("href","");
+		Uri^ Link=gcnew Uri(TempUrl);
+		try
+		{
+			String^ FilePath = ParseFilePath(Link->Segments[SEGMENTDEPTH_FOR_ID]);
+			String^ FileExtension = ParseFileExtension(Link->Segments[SEGMENTDEPTH_FOR_ID]);
+			FilePath=SITE_NAME+FILEPATH_JOINER+FilePath+FileExtension;
+			if (!(IO::File::Exists(FilePath)))
+			{
+				WebClient^ Host_Reader = gcnew WebClient;
+				Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING);
+				Console::WriteLine("Downloading "+FilePath);
+#ifndef _DEBUG
+				Host_Reader->DownloadFile(Link,FilePath);  
+#endif // !DEBUGGING
 
+			} 
+			else
+			{
+				Console::WriteLine(FilePath+" Already Exists");
+			}
+
+		}
+		catch (WebException^ e)
+		{
+			Console::ForegroundColor=ConsoleColor::Red;
+			Console::BackgroundColor=ConsoleColor::Black;
+#ifdef _DEBUG
+			Console::WriteLine("Cannot connect to Host {0}", e);
+#endif
+#ifndef _DEBUG
+#ifndef Moebooru
+			Console::WriteLine("Cannot Download {0}", Links[i]->Link);
+#endif
+			Console::WriteLine("Because {0}", e);
+#endif
+		}
+	}
+	Thread::Yield();
+};
+#endif
 #ifdef Gelbooru
 Danbooru_Containers::PostData^ DanbooruDownloader::GetPostData(String^ PostUrl) //Function to get Download Link from page url
 {
