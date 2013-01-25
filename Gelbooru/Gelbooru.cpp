@@ -14,9 +14,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	SiteData->SITE_DOMAIN = gcnew String("http://www.gelbooru.com");
 	SiteData->SITE_NAME = gcnew String("Gelbooru");
 	SiteData->START_PAGE_INDEX=0;
+#ifndef _DEBUG
 	SiteData->NUMBER_OF_THREADS=3;
+#endif
+#ifdef _DEBUG
+	SiteData->NUMBER_OF_THREADS=5;
+#endif // _DEBUG
 	SiteData->SEGMENTDEPTH_FOR_ID=4;
-	SiteData->USER_AGENT_STRING = gcnew String("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
+	SiteData->USER_AGENT_STRING = gcnew String("Mozilla/5.0(iPad; U; CPU iPhone OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B314 Safari/531.21.10");
 	SiteData->CHECKTAGS_STRING = gcnew String("class=\"preview\"/>");
 	SiteData->ACCESSPAGE_STRING = gcnew String("/index.php?page=post&pid=");
 	SiteData->POSTTAGS_STRING = gcnew String("&s=list&tags=");

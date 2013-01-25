@@ -14,7 +14,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	SiteData->SITE_DOMAIN = gcnew String("http://danbooru.donmai.us");
 	SiteData->SITE_NAME = gcnew String("Danbooru");
 	SiteData->START_PAGE_INDEX=1;
+#ifndef _DEBUG
 	SiteData->NUMBER_OF_THREADS=3;
+#endif
+#ifdef _DEBUG
+	SiteData->NUMBER_OF_THREADS=10;
+#endif // _DEBUG
 	SiteData->SEGMENTDEPTH_FOR_ID=4;
 	SiteData->USER_AGENT_STRING = gcnew String("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
 	SiteData->CHECKTAGS_STRING = gcnew String("<img  class=\"preview    \"");
@@ -23,7 +28,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	SiteData->PAGENUMBER_XPATH = gcnew String("//div[@class='pagination']/a");
 	SiteData->POSTLINKS_XPATH = gcnew String("//span[@class='thumb blacklisted']/a");
 	SiteData->IMAGECONTAINER_XPATH = gcnew String("//div[@class='content']/div/img[@id='image']");
-	SiteData->FILEPATH_JOINER = gcnew String("");
+	SiteData->FILEPATH_JOINER = gcnew String("/");
 	SiteData->DelayInConnections=0;
 	array<String^>^args = Environment::GetCommandLineArgs();
 	DanbooruDownloader::StartDownloader(args,SiteData);

@@ -15,7 +15,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	SiteData->SITE_NAME = gcnew String("chan@sc");
 	SiteData->START_PAGE_INDEX=1;
 	SiteData->NUMBER_OF_THREADS=1;
-	SiteData->SEGMENTDEPTH_FOR_ID=3;
+	SiteData->SEGMENTDEPTH_FOR_ID=4;
 	SiteData->USER_AGENT_STRING = gcnew String("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
 	SiteData->CHECKTAGS_STRING = gcnew String("<img  class=\"preview    \"");
 	SiteData->ACCESSPAGE_STRING = gcnew String("/post?page=");
@@ -25,6 +25,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	SiteData->IMAGECONTAINER_XPATH = gcnew String("//a[@id='image-link']/img[@id='image']");
 	SiteData->FILEPATH_JOINER = gcnew String("/");
 	SiteData->DelayInConnections=1;
+	SiteData->DelayTime=2000;
 	array<String^>^args = Environment::GetCommandLineArgs();
 	DanbooruDownloader::StartDownloader(args,SiteData);
 #ifdef _DEBUG

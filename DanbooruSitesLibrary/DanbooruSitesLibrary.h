@@ -9,7 +9,6 @@ using namespace System::Threading;
 using namespace HtmlAgilityPack;
 
 namespace DanbooruSitesLibrary {
-
 	public ref class Danbooru_Containers
 {
 public:
@@ -25,7 +24,7 @@ public:
 	};
 	value struct PostData {
 		String^ Link;
-		String^ ID;
+		int ID;
 		String^ Tags;
 	};
 	value struct SiteData {
@@ -43,6 +42,7 @@ public:
 		static String^ IMAGECONTAINER_XPATH;
 		static String^ FILEPATH_JOINER;
 		static bool DelayInConnections;
+		static int DelayTime;
 	};
 };
 	public ref class DanbooruDownloader //MainClass yandere downloader
@@ -52,6 +52,7 @@ private:
 	static array<String^>^ tags;
 	static int START_PAGE_INDEX;
 	static int NUMBER_OF_THREADS;
+	static int DelayTime;
 	static int SEGMENTDEPTH_FOR_ID;
 	static String^ SITE_DOMAIN;
 	static String^ SITE_NAME;
@@ -64,6 +65,7 @@ private:
 	static String^ IMAGECONTAINER_XPATH;
 	static String^ FILEPATH_JOINER;
 	static bool DelayInConnections;
+	static Text::RegularExpressions::Regex^ digitsOnly = gcnew Text::RegularExpressions::Regex("[^0-9]");
 	static void DefineSite(Danbooru_Containers::SiteData^ SiteData){
 		SITE_DOMAIN = SiteData->SITE_DOMAIN;
 		SITE_NAME = SiteData->SITE_NAME;
@@ -79,12 +81,45 @@ private:
 		IMAGECONTAINER_XPATH = SiteData->IMAGECONTAINER_XPATH;
 		FILEPATH_JOINER = SiteData->FILEPATH_JOINER;
 		DelayInConnections=SiteData->DelayInConnections;
+		DelayTime=SiteData->DelayTime;
 	};
 	static String^ GetRawHtml(String^ Url){
 		//Console::WriteLine("GetRawHtml Called with: "+Url);
 		String^ OutputHtml;
 		try
 		{
+#ifdef _DEBUG
+		//	Console::WriteLine("GetRawHtml Called with: "+Url);
+#endif // _DEBUG
+			WebClient^ Host_Reader = gcnew WebClient; //Initialize the Webclient needed to parse HTML
+			Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING); //Add user agent header
+			OutputHtml=Host_Reader->DownloadString(Url);	//Download Source Code and put it in PageData String
+			//Console::WriteLine(OutputHtml);
+		}
+		catch (WebException^ e)
+		{
+			Console::ForegroundColor=ConsoleColor::Red;
+			Console::WriteLine("GetRawHtml failed because {0}",e);
+			Console::WriteLine("at: "+Url);
+			Console::ResetColor();
+			return nullptr;
+		}
+		catch (ArgumentNullException^ e){
+			Console::ForegroundColor=ConsoleColor::Red;
+			Console::WriteLine("You have to have an input {0}",e);
+			Console::ResetColor();
+			throw e;
+		}
+		return OutputHtml;
+	};
+	static String^ GetRawHtml(Uri^ Url){
+		//Console::WriteLine("GetRawHtml Called with: "+Url);
+		String^ OutputHtml;
+		try
+		{
+#ifdef _DEBUG
+			//Console::WriteLine("GetRawHtml Called with: "+Url);
+#endif // _DEBUG
 			WebClient^ Host_Reader = gcnew WebClient; //Initialize the Webclient needed to parse HTML
 			Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING); //Add user agent header
 			OutputHtml=Host_Reader->DownloadString(Url);	//Download Source Code and put it in PageData String
@@ -95,26 +130,18 @@ private:
 			Console::WriteLine("GetRawHtml failed because {0}",e);
 			return nullptr;
 		}
-		return OutputHtml;
-	};
-	static String^ GetRawHtml(Uri^ Url){
-		//Console::WriteLine("GetRawHtml Called with: "+Url);
-		String^ OutputHtml;
-		try
-		{
-			WebClient^ Host_Reader = gcnew WebClient; //Initialize the Webclient needed to parse HTML
-			Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING); //Add user agent header
-			OutputHtml=Host_Reader->DownloadString(Url);	//Download Source Code and put it in PageData String
-			//Console::WriteLine(OutputHtml);
-		}
-		catch (WebException^ e)
-		{
+		catch (ArgumentNullException^ e){
+			Console::WriteLine("You have to have an input {0}",e);
 			throw e;
 		}
 		return OutputHtml;
 	};
 	static String^ ReadDanbooru(int page) //Function to get RAW html source code from site with 'page' and 'tags' as source
 	{
+		if (page<0)
+		{
+			throw gcnew System::ArgumentOutOfRangeException;
+		}
 		String^ Page_Data;//RAW Html string initialization
 		String^ FinalUrl= gcnew String(SITE_DOMAIN+ACCESSPAGE_STRING);//URL String initialization
 #ifndef Gelbooru
@@ -135,27 +162,44 @@ private:
 		{
 			Page_Data=GetRawHtml(FinalUrl);
 		}
-		catch (WebException^ e) //In case of Webexception the following code is run
+		catch (System::ArgumentNullException^ e)
 		{
 			Console::ForegroundColor=ConsoleColor::Red;
-			Console::BackgroundColor=ConsoleColor::Black;
-#ifdef _DEBUG
-			Console::WriteLine("Cannot connect to Host {0}", e); //Detailed error code
-#endif
-#ifndef _DEBUG
+			Console::WriteLine("URL Must have a value");
+			Console::WriteLine("Error: {0}",e);
+			Console::ResetColor();
+		}
+		if (Page_Data == nullptr) //In case of Webexception the following code is run
+		{
+			Console::ForegroundColor=ConsoleColor::Red;
 			Console::WriteLine("Cannot connect to Host");
 			Console::WriteLine("Is Internet connection alive?");
-			Console::WriteLine("Error: {0}",e);
-#endif
-		}
+			Console::ResetColor();
+		}	
+		
 		return Page_Data; //Returns RAW HTLM string
 	};
 	static HtmlNodeCollection^ GetHtmlNodes(String^ RawHtml,String^ Xpath){
-		HtmlDocument doc; //initialize HTML Documents
-		doc.LoadHtml(RawHtml);//load Html from RAW Html string
-		HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
-		//Console::WriteLine(nodo_p->HasChildNodes);
-		return nodo_p->SelectNodes(Xpath); //Select all nodes with direct image link
+		if (RawHtml == nullptr || Xpath == nullptr)
+		{
+			throw gcnew ArgumentNullException;
+		}
+		try
+		{
+			HtmlDocument doc; //initialize HTML Documents
+			doc.LoadHtml(RawHtml);//load Html from RAW Html string
+			HtmlNode^ nodo_p = doc.DocumentNode; //Get Nodes from HTML Doc
+			//Console::WriteLine(nodo_p->HasChildNodes);
+			return nodo_p->SelectNodes(Xpath); //Select all nodes with direct image link
+		}
+		catch (System::ArgumentNullException^ e)
+		{
+			Console::ForegroundColor=ConsoleColor::Red;
+			Console::WriteLine("GetHtmlNodes failed because {0]",e);
+			Console::ResetColor();
+			return nullptr;
+		}
+		
 	};
 	static Danbooru_Containers::ThreadGroup^ SetThreads(){
 		Danbooru_Containers::ThreadGroup^ Threads=gcnew Danbooru_Containers::ThreadGroup;
@@ -166,10 +210,32 @@ private:
 #ifndef Moebooru
 	static array<Danbooru_Containers::PostData^>^ GetDownloadData(int page) //Function to get Download Links from site with 'page' and 'tags' as source
 	{
-		String^ RawHtml = ReadDanbooru(page);
+		String^ RawHtml;
+		try
+		{
+			RawHtml = ReadDanbooru(page);	
+		}
+		catch (ArgumentOutOfRangeException^ e)
+		{
+			Console::ForegroundColor=ConsoleColor::Red;
+			Console::WriteLine("Page must be positive");
+			Console::WriteLine("Error: {0}",e);
+			Console::ResetColor();
+		}
+		if (RawHtml==nullptr)
+		{
+			throw gcnew ArgumentNullException;
+		}
 		//Console::WriteLine(RawHtml);
-		HtmlNodeCollection^ HtmlNodes = GetHtmlNodes(RawHtml,POSTLINKS_XPATH);
-		Console::WriteLine("GetHtmlNodes called with Xpath "+POSTLINKS_XPATH);
+		HtmlNodeCollection^ HtmlNodes;
+		HtmlNodes = GetHtmlNodes(RawHtml,POSTLINKS_XPATH);
+		if (HtmlNodes==nullptr || HtmlNodes->Count==0)
+		{
+			Console::ForegroundColor=ConsoleColor::Red;
+			Console::WriteLine("No nodes were found with the specified XPath");
+			Console::ResetColor();
+			return nullptr;
+		}
 #ifdef _DEBUG
 		Console::WriteLine("Total nodes in GetDownloadLink are: "+HtmlNodes->Count);
 #endif // DEBUGGING
@@ -177,14 +243,20 @@ private:
 		int nodecount=0;
 		for each (HtmlNode^ a_refs in HtmlNodes)
 		{
-			if (DelayInConnections)Thread::Sleep(2000);
-			Danbooru_Containers::PostData^ a_r_data =GetPostData(SITE_DOMAIN+FILEPATH_JOINER+a_refs->GetAttributeValue("href",""));
-			if (a_r_data!=nullptr){
-				LinkData[nodecount]=a_r_data;
-			}else
+			if (DelayInConnections)Thread::Sleep(DelayTime);
+			Danbooru_Containers::PostData^ a_r_data;
+			try
 			{
-				LinkData[nodecount]=nullptr;
+				a_r_data=GetPostData(SITE_DOMAIN+FILEPATH_JOINER+a_refs->GetAttributeValue("href",""));
 			}
+			catch (ArgumentNullException^ e)
+			{
+				Console::ForegroundColor=ConsoleColor::Red;
+				Console::WriteLine("Gotta give a valid url");
+				Console::WriteLine("Error: {0}",e);
+				Console::ResetColor();
+			}
+				LinkData[nodecount]=a_r_data;
 			//Console::WriteLine(Links[nodecount]);
 			nodecount++;
 		}
@@ -194,67 +266,85 @@ private:
 		return LinkData;
 	};
 	static void DownloadFiles(Object^ data){//function to Parse Html Tags and call download
-		int Page =(int)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
-		array<Danbooru_Containers::PostData^>^ Links=GetDownloadData(Page);
-		int LinksCount = Links->Length;
-		Console::WriteLine("Downloading "+LinksCount+" files."); //Write the number of downloadable files
-		for (int i=0;i<LinksCount;i++)
+		if (data!=nullptr)
 		{
-			if (Links[i]==nullptr)
-			{
-				continue;
-			}
-			//Console::WriteLine(Links[i]);
-			Uri^ Link=gcnew Uri(Links[i]->Link);
-			try
-			{
-				String^ FilePath = ParseFilePath(Links[i]->ID+" "+Links[i]->Tags);
+			int Page =(int)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
+			array<Danbooru_Containers::PostData^>^ Links=GetDownloadData(Page);
+			if (Links!=nullptr){
+				int LinksCount = Links->Length;
+				Console::WriteLine("Downloading "+LinksCount+" files."); //Write the number of downloadable files
+				for (int i=0;i<LinksCount;i++)
+				{
+					if (Links[i]==nullptr)
+					{
+						Console::ForegroundColor=ConsoleColor::Red;
+						Console::WriteLine("No data in position "+i);
+						Console::ResetColor();
+						continue;
+						
+					}
+					//Console::WriteLine(Links[i]);
+					Uri^ Link=gcnew Uri(Links[i]->Link);
+				
+						String^ FilePath = ParseFilePath(Links[i]->ID+" "+Links[i]->Tags);
 #ifndef Gelbooru
-				String^ FileExtension = ParseFileExtension(Links[i]->Link);
+						String^ FileExtension = ParseFileExtension(Links[i]->Link);
 #endif
 #ifdef Gelbooru
-				String^ FileExtension = ParseFileExtension(Links[i]->Link,Convert::ToInt32(Links[i]->ID));
+						String^ FileExtension = ParseFileExtension(Links[i]->Link,Convert::ToInt32(Links[i]->ID));
 #endif
-				FilePath=SITE_NAME+FILEPATH_JOINER+FilePath+FileExtension;
-				if (!(IO::File::Exists(FilePath)))
-				{
-					WebClient^ Host_Reader = gcnew WebClient;
-					Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING);
-					Console::WriteLine("Downloading "+FilePath);
+						FilePath=SITE_NAME+FILEPATH_JOINER+FilePath+FileExtension;
+						if (!(IO::File::Exists(FilePath)))
+						{
+							try
+							{
+								WebClient^ Host_Reader = gcnew WebClient;
+								Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING);
+								Console::WriteLine("Downloading "+FilePath);
 #ifndef _DEBUG
-					Host_Reader->DownloadFile(Link,FilePath);  
+								Host_Reader->DownloadFile(Link,FilePath);  
 #endif // !DEBUGGING
-
-				} 
-				else
-				{
-					Console::WriteLine(FilePath+" Already Exists");
-				}
-
-			}
-			catch (WebException^ e)
-			{
-				Console::ForegroundColor=ConsoleColor::Red;
-				Console::BackgroundColor=ConsoleColor::Black;
+							}
+						catch (WebException^ e)
+						{
+							Console::ForegroundColor=ConsoleColor::Red;
 #ifdef _DEBUG
-				Console::WriteLine("Cannot connect to Host {0}", e);
+							Console::WriteLine("Cannot connect to Host {0}", e);
 #endif
 #ifndef _DEBUG
-				Console::WriteLine("Cannot Download {0}", Links[i]->Link);
-				Console::WriteLine("Because {0}", e);
+							Console::WriteLine("Cannot Download {0}", Links[i]->Link);
+							Console::WriteLine("Because {0}", e);
 #endif
+							Console::ResetColor();
+						}
+						catch (ArgumentNullException^ e){
+							Console::ForegroundColor=ConsoleColor::Red;
+							Console::WriteLine("You have to have an input {0}",e);
+							Console::ResetColor();
+							throw e;
+						}
+							
+						} 
+						else
+						{
+							Console::WriteLine(Links[i]->ID+" Already Exists");
+						}
+
+					
+				}
+				Thread::Yield();
 			}
+				
 		}
-		Thread::Yield();
+		
 	};
 	static String^ ParseFilePath(String^ FilePath){
 		FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
-		try
+		FilePath=FilePath->Replace("show ","");
+		FilePath=Uri::UnescapeDataString(FilePath);
+		if (FilePath->Length > 140)
 		{
 			FilePath=FilePath->Substring(0,140);
-		}
-		catch (System::ArgumentOutOfRangeException^ e)
-		{
 		}
 		return FilePath;
 	};
@@ -263,10 +353,32 @@ private:
 # ifndef Moebooru
 	static Danbooru_Containers::PostData^ GetPostData(String^ PostUrl) //Function to get Download Link from page url
 	{
+		if (PostUrl == nullptr)
+		{
+			Console::ForegroundColor=ConsoleColor::Red;
+			Console::WriteLine("URL Cannot be Null");
+			Console::ResetColor();
+			throw gcnew ArgumentNullException;
+		}
 		Uri^ Link=gcnew Uri(PostUrl);
-		String^ RawHtml = GetRawHtml(PostUrl);
+		String^ RawHtml;
+		try
+		{
+			RawHtml = GetRawHtml(PostUrl);
+		}
+		catch (ArgumentNullException^ e)
+		{
+			Console::ForegroundColor=ConsoleColor::Red;
+			Console::WriteLine("Gotta specify an URL");
+			Console::WriteLine("Error {0}",e);
+			Console::ResetColor();
+		}
+		
 		if (RawHtml==nullptr)
 		{
+			Console::ForegroundColor=ConsoleColor::Red;
+			Console::WriteLine("No HTML Found, giving nullptr");
+			Console::ResetColor();
 			return nullptr;
 		}
 		Danbooru_Containers::PostData^ PostData = gcnew Danbooru_Containers::PostData;
@@ -284,7 +396,8 @@ private:
 				Console::WriteLine("Tags of post "+PostUrl+" are "+PostData->Tags);
 #endif // DEBUGGING
 			}
-			PostData->ID=Link->Segments[SEGMENTDEPTH_FOR_ID];
+			String^ IDasString =Link->Segments[SEGMENTDEPTH_FOR_ID];
+			PostData->ID=Convert::ToInt32(digitsOnly->Replace(IDasString,""));
 #ifdef _DEBUG
 			Console::WriteLine("ID of post "+PostUrl+" is "+PostData->ID);
 #endif // DEBUGGING
@@ -316,6 +429,9 @@ private:
 			}
 			catch (NullReferenceException^ e) //If no div availavable, means it just have 1 page
 			{
+				Console::ForegroundColor=ConsoleColor::DarkBlue;
+				Console::WriteLine("Return 1 page because of {0}",e);
+				Console::ResetColor();
 				return 1;	//return 1 page
 			}
 		}
@@ -334,6 +450,7 @@ private:
 
 public:
 	static void StartDownloader(array<String^>^ args,Danbooru_Containers::SiteData^ SiteData){
+		Console::Title=SiteData->SITE_NAME+" Batch image downloader";
 		bool CheckTags=0;
 		if ( args == nullptr || args->Length == 1 )
 		{
@@ -427,96 +544,127 @@ public:
 #ifdef _DEBUG
 				Console::WriteLine("All Threads terminated");
 #endif // DEBUGGING
+				Console::WriteLine("All Downloads Finished");
 			} 
 			else
 			{
 				Console::WriteLine("Nothing here but us Chickens!");
 			}
 
-			Console::ResetColor();
+			
 		}
 	};
 };
 #ifdef Moebooru
 String^ DanbooruDownloader::ParseFilePath(String^ FilePath){
 	FilePath=FilePath->Replace(SITE_NAME+"%20","");
+	FilePath=FilePath->Replace("Konachan.com%20-%20","");
 	FilePath=Uri::UnescapeDataString(FilePath);
 	FilePath=FilePath->Join("",FilePath->Split(IO::Path::GetInvalidFileNameChars()));
-	try
-	{
+	if (FilePath->Length>140){ 
 		FilePath=FilePath->Substring(0,140);
-	}
-	catch (System::ArgumentOutOfRangeException^ e)
-	{
 	}
 	return FilePath;
 };
 void DanbooruDownloader::DownloadFiles(Object^ data){//function to Parse Html Tags and call download
+	if (data!=nullptr)
+	{
 	int Page =(int)data; //Convert input object point to a ReadYandereParameters Struct pointer and direct it to object
 	String^ HtmlContent=ReadDanbooru(Page); //Get Raw HTML with needed parameters
-	String^ TempUrl; //Initialize string to store URL
-	HtmlNodeCollection^ nodos_a = GetHtmlNodes(HtmlContent,"//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']");; //Select all nodes with direct image link
-	Console::WriteLine("Downloading "+nodos_a->Count+" files."); //Write the number of downloadable files
-	for each (HtmlNode^ var in nodos_a)
+	if (HtmlContent!=nullptr)
 	{
-		if (var==nullptr)
+		String^ TempUrl; //Initialize string to store URL
+		HtmlNodeCollection^ nodos_a = GetHtmlNodes(HtmlContent,"//a[@class='directlink largeimg'] | //a[@class='directlink smallimg']");; //Select all nodes with direct image link
+		Console::WriteLine("Downloading "+nodos_a->Count+" files."); //Write the number of downloadable files
+		for each (HtmlNode^ var in nodos_a)
 		{
-			continue;
-		}
-		//Console::WriteLine(Links[i]);
-		TempUrl=var->GetAttributeValue("href","");
-		Uri^ Link=gcnew Uri(TempUrl);
-		try
-		{
+			if (var==nullptr)
+			{
+				continue;
+			}
+			//Console::WriteLine(Links[i]);
+			TempUrl=var->GetAttributeValue("href","");
+			Uri^ Link=gcnew Uri(TempUrl);
 			String^ FilePath = ParseFilePath(Link->Segments[SEGMENTDEPTH_FOR_ID]);
 			String^ FileExtension = ParseFileExtension(Link->Segments[SEGMENTDEPTH_FOR_ID]);
 			FilePath=SITE_NAME+FILEPATH_JOINER+FilePath+FileExtension;
 			if (!(IO::File::Exists(FilePath)))
 			{
-				WebClient^ Host_Reader = gcnew WebClient;
-				Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING);
-				Console::WriteLine("Downloading "+FilePath);
+				try
+				{
+					WebClient^ Host_Reader = gcnew WebClient;
+					Host_Reader->Headers->Add("user-agent", USER_AGENT_STRING);
+					Console::WriteLine("Downloading "+FilePath);
 #ifndef _DEBUG
-				Host_Reader->DownloadFile(Link,FilePath);  
+					Host_Reader->DownloadFile(Link,FilePath);  
 #endif // !DEBUGGING
-
-			} 
+				}
+				catch (WebException^ e)
+				{
+					Console::ForegroundColor=ConsoleColor::Red;
+#ifdef _DEBUG
+					Console::WriteLine("Cannot connect to Host {0}", e);
+#endif
+#ifndef _DEBUG
+					Console::WriteLine("Cannot Download {0}", Link);
+					Console::WriteLine("Because {0}", e);
+#endif
+					Console::ResetColor();
+				}
+				catch (ArgumentNullException^ e){
+					Console::ForegroundColor=ConsoleColor::Red;
+					Console::WriteLine("You have to have an input {0}",e);
+					Console::ResetColor();
+					throw e;
+				}
+								} 
 			else
 			{
 				Console::WriteLine(FilePath+" Already Exists");
 			}
 
-		}
-		catch (WebException^ e)
-		{
-			Console::ForegroundColor=ConsoleColor::Red;
-			Console::BackgroundColor=ConsoleColor::Black;
-#ifdef _DEBUG
-			Console::WriteLine("Cannot connect to Host {0}", e);
-#endif
-#ifndef _DEBUG
-#ifndef Moebooru
-			Console::WriteLine("Cannot Download {0}", Links[i]->Link);
-#endif
-			Console::WriteLine("Because {0}", e);
-#endif
+			
 		}
 	}
+	
 	Thread::Yield();
+	}
+	
 };
 #endif
 #ifdef Gelbooru
 Danbooru_Containers::PostData^ DanbooruDownloader::GetPostData(String^ PostUrl) //Function to get Download Link from page url
 {
+	if (PostUrl == nullptr)
+	{
+		Console::ForegroundColor=ConsoleColor::Red;
+		Console::WriteLine("URL Cannot be Null");
+		Console::ResetColor();
+		throw gcnew ArgumentNullException;
+	}
 	PostUrl=Uri::UnescapeDataString(PostUrl);
 	PostUrl=PostUrl->Replace("&amp;","&");
 #ifdef _DEBUG
 	System::Console::WriteLine("GetPostData function called with: "+PostUrl);
 #endif
 	Uri^ Link=gcnew Uri(PostUrl);
-	String^ RawHtml = GetRawHtml(Link);
+	String^ RawHtml;
+	try
+	{
+		RawHtml = GetRawHtml(PostUrl);
+	}
+	catch (ArgumentNullException^ e)
+	{
+		Console::ForegroundColor=ConsoleColor::Red;
+		Console::WriteLine("Gotta specify an URL");
+		Console::WriteLine("Error {0}",e);
+		Console::ResetColor();
+	}
 	if (RawHtml==nullptr)
 	{
+		Console::ForegroundColor=ConsoleColor::Red;
+		Console::WriteLine("No HTML Found, giving nullptr");
+		Console::ResetColor();
 		return nullptr;
 	}
 	Danbooru_Containers::PostData^ PostData = gcnew Danbooru_Containers::PostData;
@@ -534,7 +682,7 @@ Danbooru_Containers::PostData^ DanbooruDownloader::GetPostData(String^ PostUrl) 
 			Console::WriteLine("Tags of post "+PostUrl+" are "+PostData->Tags);
 #endif // DEBUGGING
 		}
-		PostData->ID=PostUrl->Substring((PostUrl->IndexOf("id=")+3));
+		PostData->ID=Convert::ToInt32(PostUrl->Substring((PostUrl->IndexOf("id=")+3)));
 #ifdef _DEBUG
 		Console::WriteLine("ID of post "+PostUrl+" is "+PostData->ID);
 #endif // DEBUGGING
@@ -568,6 +716,9 @@ int DanbooruDownloader::GetPagesNumber() //Function to get the number of pages t
 		}
 		catch (NullReferenceException^ e) //If no div availavable, means it just have 1 page
 		{
+			Console::ForegroundColor=ConsoleColor::DarkBlue;
+			Console::WriteLine("Return 1 page because of {0}",e);
+			Console::ResetColor();
 			return 1;	//return 1 page
 		}
 	}

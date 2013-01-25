@@ -1,6 +1,15 @@
 @echo Updating Deployment
 @echo .........................
 @echo .........................
+@echo Cleaning
+del Deployed\Release\x64\*.* /q
+del Deployed\Debug\x64\*.* /q
+del Deployed\Release\x86\*.* /q
+del Deployed\Debug\x86\*.* /q
+@echo off
+@echo on
+@echo .........................
+@echo .........................
 @echo Updating SourceDLL
 @echo off
  
