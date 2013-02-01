@@ -273,6 +273,7 @@ private:
 			if (Links!=nullptr){
 				int LinksCount = Links->Length;
 				Console::WriteLine("Downloading "+LinksCount+" files."); //Write the number of downloadable files
+				int TryCount=0;
 				for (int i=0;i<LinksCount;i++)
 				{
 					if (Links[i]==nullptr)
@@ -308,6 +309,14 @@ private:
 						catch (WebException^ e)
 						{
 							Console::ForegroundColor=ConsoleColor::Red;
+							if (TryCount<3)
+							{
+								Console::WriteLine("Failed to fetch position "+i+"... Attempt "+(TryCount+1));
+								Console::WriteLine("Because: {0}",e);
+								Console::ResetColor();
+								i-=1;
+								continue;
+							}
 #ifdef _DEBUG
 							Console::WriteLine("Cannot connect to Host {0}", e);
 #endif
